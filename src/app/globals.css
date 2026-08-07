@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+/* ───────────────────────────────────────────────
+   HIDRO ALERTA — Design Tokens
+   FASE FRONT-1C — Identidade Visual
+   ─────────────────────────────────────────────── */
+
+@theme inline {
+  /* === Estrutural — Navy === */
+  --color-hydro-navy-950: #061A38;
+  --color-hydro-navy-900: #08234A;
+  --color-hydro-navy-850: #0A2C59;
+  --color-hydro-navy-800: #103967;
+
+  /* === Primário — Azul / Ciano === */
+  --color-hydro-blue-700: #075ED1;
+  --color-hydro-blue-600: #0878F9;
+  --color-hydro-blue-500: #1697FF;
+  --color-hydro-cyan-500: #13B8F5;
+  --color-hydro-cyan-400: #38C7FF;
+
+  /* === Fundos === */
+  --color-hydro-bg: #EEF5FF;
+  --color-hydro-bg-soft: #F6F9FF;
+  --color-hydro-surface: #FFFFFF;
+  --color-hydro-surface-blue: #F2F7FF;
+  --color-hydro-border: #DCE8F7;
+
+  /* === Texto === */
+  --color-hydro-text: #10213B;
+  --color-hydro-text-secondary: #62738D;
+  --color-hydro-text-on-dark: #F7FBFF;
+  --color-hydro-text-muted: #9DB5D3;
+
+  /* === Estados === */
+  --color-hydro-danger: #F12B36;
+  --color-hydro-danger-dark: #C91527;
+  --color-hydro-orange: #FF7417;
+  --color-hydro-warning: #F7B500;
+  --color-hydro-safe: #14B8A6;
+  --color-hydro-safe-soft: #DDF8F3;
+  --color-hydro-purple: #7847E8;
+
+  /* === Soft backgrounds (badges/status) === */
+  --color-hydro-blue-soft: #DBEAFE;
+  --color-hydro-warning-soft: #FEF3C7;
+  --color-hydro-orange-soft: #FFEDD5;
+  --color-hydro-danger-soft: #FEE2E2;
+  --color-hydro-purple-soft: #EDE9FE;
+  --color-hydro-safe-bg: #CCFBF1;
+
+  /* === Dark text on soft backgrounds === */
+  --color-hydro-warning-dark: #92400E;
+  --color-hydro-orange-dark: #9A3412;
+  --color-hydro-danger-dark-text: #B91C1C;
+  --color-hydro-purple-dark: #6D28D9;
+
+  /* === Aliases semânticos === */
+  --color-primary: #075ED1;
+  --color-primary-light: #0878F9;
+  --color-background: #EEF5FF;
+  --color-foreground: #10213B;
+  --color-sidebar: #061A38;
+  --color-surface: #FFFFFF;
+  --color-danger: #F12B36;
+  --color-warning: #F7B500;
+  --color-safe: #14B8A6;
+}
+
+/* === Sombras === */
+@theme inline {
+  --shadow-hydro: 0 8px 24px rgba(20, 66, 120, 0.08), 0 2px 6px rgba(20, 66, 120, 0.05);
+  --shadow-hydro-sm: 0 2px 8px rgba(20, 66, 120, 0.06);
+  --shadow-hydro-lg: 0 12px 32px rgba(20, 66, 120, 0.12);
+  --shadow-hydro-sos: 0 4px 16px rgba(241, 43, 54, 0.4);
+}
+
+/* ─── Base ─── */
+
+body {
+  background: var(--color-hydro-bg);
+  background-image: linear-gradient(180deg, #EAF3FF 0%, #F7FAFF 100%);
+  background-attachment: fixed;
+  color: var(--color-hydro-text);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* ─── Gradientes utilitários ─── */
+
+.bg-hydro-gradient-sidebar {
+  background: linear-gradient(180deg, #061A38 0%, #082A55 100%);
+}
+
+.bg-hydro-gradient-primary {
+  background: linear-gradient(135deg, #075ED1 0%, #13B8F5 100%);
+}
+
+.bg-hydro-gradient-emergency {
+  background: linear-gradient(135deg, #D61529 0%, #FF3B30 55%, #FF7417 100%);
+}
+
+.bg-hydro-gradient-safe {
+  background: linear-gradient(135deg, #0D9F98 0%, #2ED3C3 100%);
+}
+
+/* ─── Leaflet overrides ─── */
+
+.leaflet-container {
+  z-index: 0;
+  font-family: 'Inter', system-ui, sans-serif;
+  border-radius: 1rem;
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 12px rgba(20, 66, 120, 0.12);
+}
+
+.leaflet-control-zoom a {
+  background-color: var(--color-hydro-surface) !important;
+  color: var(--color-hydro-text) !important;
+  border-color: var(--color-hydro-border) !important;
+}
+
+.leaflet-control-attribution {
+  font-size: 10px !important;
+  background: rgba(255, 255, 255, 0.7) !important;
+  color: var(--color-hydro-text-secondary) !important;
+}
+
+/* ─── Scrollbar ─── */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-hydro-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-hydro-text-muted);
+}
+
+/* ─── Focus — Acessibilidade ─── */
+
+*:focus-visible {
+  outline: 2px solid var(--color-hydro-cyan-500);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+/* ─── Reduced motion ─── */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
