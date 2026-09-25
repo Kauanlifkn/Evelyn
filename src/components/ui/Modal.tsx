@@ -19,9 +19,19 @@ export function Modal({ open, onClose, title, children, className }: ModalProps)
     const dialog = dialogRef.current;
     if (!dialog) return;
     if (open && !dialog.open) {
-      dialog.showModal();
+      // showModal gives native focus trapping + Escape handling. jsdom does
+      // not implement it, so tests fall back to the open attribute.
+      if (typeof dialog.showModal === 'function') {
+        dialog.showModal();
+      } else {
+        dialog.setAttribute('open', '');
+      }
     } else if (!open && dialog.open) {
-      dialog.close();
+      if (typeof dialog.close === 'function') {
+        dialog.close();
+      } else {
+        dialog.removeAttribute('open');
+      }
     }
   }, [open]);
 

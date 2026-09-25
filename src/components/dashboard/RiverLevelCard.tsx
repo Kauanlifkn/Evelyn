@@ -76,8 +76,8 @@ export function RiverLevelCard({
           Atualizado: {new Date(lastUpdate).toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
         </p>
         {(status === 'danger' || status === 'overflow') && (
-          <span className="inline-flex items-center gap-1 text-xs font-medium text-hydro-danger">
-            <TrendingUp className="h-3 w-3" />
+          <span className="inline-flex items-center gap-1 text-xs font-medium text-hydro-danger-dark-text">
+            <TrendingUp className="h-3 w-3" aria-hidden="true" />
             Subindo
           </span>
         )}

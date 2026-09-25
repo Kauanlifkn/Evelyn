@@ -1,0 +1,100 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<rss version="2.0">
+  <channel>
+    <title>Avisos</title>
+    <link>https://avisos.inmet.gov.br</link>
+    <description>Avisos atuais na América do Sul</description>
+    <language>pt-BR</language>
+    <pubDate>Mon, 18 May 2026 18:23:15 +0000</pubDate>
+
+    <item>
+      <title>Aviso de Chuvas Intensas. Severidade Grau: Perigo</title>
+      <link>https://apiprevmet3.inmet.gov.br/avisos/rss/54415</link>
+      <description><![CDATA[
+|  |  |
+| --- | --- |
+| Status | Alert |
+| Evento | Chuvas Intensas |
+| Severidade | Perigo |
+| Início | 2099-05-17 09:00:00.0 |
+| Fim | 2099-12-31 23:59:00.0 |
+| Descrição | INMET publica aviso iniciando em: 17/05/2026 09:00. Chuva entre 30 e 60 mm/h ou 50 e 100 mm/dia, ventos intensos (60-100 km/h). Risco de corte de energia elétrica, queda de galhos de árvores, alagamentos e de descargas elétricas. |
+| Área | Aviso para as Áreas: Metropolitana de Curitiba, Bauru, Itapetininga |
+| Link Gráfico | https://avisos.inmet.gov.br/54415 |
+]]></description>
+      <pubDate>Sun, 17 May 2026 09:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Aviso de Tempestade. Severidade Grau: Perigo Potencial</title>
+      <link>https://apiprevmet3.inmet.gov.br/avisos/rss/54423</link>
+      <description><![CDATA[
+|  |  |
+| --- | --- |
+| Status | Alert |
+| Evento | Tempestade |
+| Severidade | Perigo Potencial |
+| Início | 2099-05-19 12:00:00.0 |
+| Fim | 2099-05-19 23:59:00.0 |
+| Descrição | INMET publica aviso iniciando em: 19/05/2026 12:00. Chuva entre 20 e 30 mm/h ou até 50 mm/dia, ventos intensos (40-60 km/h), e queda de granizo. Baixo risco de corte de energia elétrica, estragos em plantações, queda de galhos de árvores e de alagamentos. |
+| Área | Aviso para as Áreas: Zona da Mata, São José do Rio Preto, Triângulo Mineiro/Alto Paranaíba |
+| Link Gráfico | https://avisos.inmet.gov.br/54423 |
+]]></description>
+      <pubDate>Tue, 19 May 2026 12:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Aviso de Geada. Severidade Grau: Perigo Potencial</title>
+      <link>https://apiprevmet3.inmet.gov.br/avisos/rss/54421</link>
+      <description><![CDATA[
+|  |  |
+| --- | --- |
+| Status | Alert |
+| Evento | Geada |
+| Severidade | Perigo Potencial |
+| Início | 2099-05-19 00:00:00.0 |
+| Fim | 2099-05-19 10:00:00.0 |
+| Descrição | INMET publica aviso iniciando em: 19/05/2026 00:00. Risco leve de perda de plantações. Temperatura mínima até 3ºC. |
+| Área | Aviso para as Áreas: Sudoeste Rio-grandense, Vale do Itajaí |
+| Link Gráfico | https://avisos.inmet.gov.br/54421 |
+]]></description>
+      <pubDate>Tue, 19 May 2026 00:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Aviso de Baixa Umidade. Severidade Grau: Perigo Potencial</title>
+      <link>https://apiprevmet3.inmet.gov.br/avisos/rss/54379</link>
+      <description><![CDATA[
+|  |  |
+| --- | --- |
+| Status | Alert |
+| Evento | Baixa Umidade |
+| Severidade | Perigo Potencial |
+| Início | 2099-05-14 12:00:00.0 |
+| Fim | 2099-05-14 18:00:00.0 |
+| Descrição | INMET publica aviso iniciando em: 14/05/2026 12:00. Umidade relativa do ar variando entre 30% e 20%. Baixo risco de incêndios florestais e à saúde. |
+| Área | Aviso para as Áreas: São José do Rio Preto, Campinas, Ribeirão Preto |
+| Link Gráfico | https://avisos.inmet.gov.br/54379 |
+]]></description>
+      <pubDate>Thu, 14 May 2026 12:00:00 +0000</pubDate>
+    </item>
+
+    <item>
+      <title>Aviso de Acumulado de Chuva. Severidade Grau: Perigo</title>
+      <link>https://apiprevmet3.inmet.gov.br/avisos/rss/54406</link>
+      <description><![CDATA[
+|  |  |
+| --- | --- |
+| Status | Alert |
+| Evento | Acumulado de Chuva |
+| Severidade | Perigo |
+| Início | 2099-05-16 08:20:00.0 |
+| Fim | 2099-05-17 10:00:00.0 |
+| Descrição | INMET publica aviso iniciando em: 16/05/2026 08:20. Chuva entre 30 a 60 mm/h ou 50 a 100 mm/dia. Risco de alagamentos, deslizamentos de encostas, transbordamentos de rios, em cidades com tais áreas de risco. |
+| Área | Aviso para as Áreas: Mata Paraibana, Leste Potiguar, Agreste Potiguar, Central Potiguar |
+| Link Gráfico | https://avisos.inmet.gov.br/54406 |
+]]></description>
+      <pubDate>Sat, 16 May 2026 08:20:00 +0000</pubDate>
+    </item>
+  </channel>
+</rss>

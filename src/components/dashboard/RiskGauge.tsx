@@ -7,11 +7,11 @@ interface RiskGaugeProps {
 }
 
 const segments = [
-  { label: 'Baixo', color: '#1697FF', range: [0, 1] },
-  { label: 'Moderado', color: '#F7B500', range: [1, 2] },
-  { label: 'Alto', color: '#FF7417', range: [2, 3] },
-  { label: 'Muito Alto', color: '#F12B36', range: [3, 4] },
-  { label: 'Crítico', color: '#7847E8', range: [4, 5] },
+  { label: 'Baixo', color: '#1697FF', text: 'text-hydro-blue-700', range: [0, 1] },
+  { label: 'Moderado', color: '#F7B500', text: 'text-hydro-warning-dark', range: [1, 2] },
+  { label: 'Alto', color: '#FF7417', text: 'text-hydro-orange-dark', range: [2, 3] },
+  { label: 'Muito Alto', color: '#F12B36', text: 'text-hydro-danger-dark-text', range: [3, 4] },
+  { label: 'Crítico', color: '#7847E8', text: 'text-hydro-purple-dark', range: [4, 5] },
 ];
 
 /* SVG helpers — angles in degrees, clockwise from top (12 o'clock) */
@@ -100,16 +100,18 @@ export function RiskGauge({ level }: RiskGaugeProps) {
         <circle cx={cx} cy={cy} r={3} fill="white" />
       </svg>
 
-      {/* Level labels */}
+      {/* Level labels.
+          Text uses dark AA-compliant color variants; the vivid segment
+          colors stay in the SVG graphic where contrast rules for graphics
+          apply and the arc shape conveys the state. */}
       <div className="flex justify-between w-full max-w-[220px] -mt-1 px-1">
         {segments.map((seg, i) => (
           <span
             key={seg.label}
             className={cn(
               'text-[10px] font-semibold transition-colors leading-tight text-center',
-              i === clamped ? '' : 'text-hydro-text-secondary/60'
+              i === clamped ? seg.text : 'text-hydro-text-secondary'
             )}
-            style={i === clamped ? { color: seg.color } : undefined}
           >
             {seg.label}
           </span>
@@ -118,10 +120,7 @@ export function RiskGauge({ level }: RiskGaugeProps) {
 
       {/* Current level display */}
       <div className="mt-2 flex items-center gap-2">
-        <span
-          className="text-2xl font-extrabold tracking-tight"
-          style={{ color: active.color }}
-        >
+        <span className={cn('text-2xl font-extrabold tracking-tight', active.text)}>
           {active.label.toUpperCase()}
         </span>
         <span className="text-sm text-hydro-text-secondary font-medium">

@@ -7,9 +7,12 @@ interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
 }
 
 const variants = {
-  primary: 'bg-hydro-blue-600 text-white hover:bg-hydro-blue-700 focus-visible:bg-hydro-blue-700',
+  // blue-700 base (not blue-600): white text needs >=4.5:1 (AA) — blue-600
+  // measured ~4.1:1. blue-700 ≈ 6:1.
+  primary: 'bg-hydro-blue-700 text-white hover:bg-hydro-blue-800 focus-visible:bg-hydro-blue-800',
   secondary: 'bg-hydro-surface-blue text-hydro-text hover:bg-hydro-border/50 focus-visible:bg-hydro-border/50',
-  danger: 'bg-hydro-danger text-white hover:bg-hydro-danger-dark focus-visible:bg-hydro-danger-dark',
+  // danger-dark base (not danger): same AA rationale (~5.8:1).
+  danger: 'bg-hydro-danger-dark text-white hover:bg-hydro-danger focus-visible:bg-hydro-danger-dark',
   outline: 'border border-hydro-border text-hydro-text hover:bg-hydro-surface-blue focus-visible:bg-hydro-surface-blue',
   ghost: 'text-hydro-text-secondary hover:bg-hydro-surface-blue focus-visible:bg-hydro-surface-blue',
 };

@@ -6,7 +6,7 @@ import { IncidentForm } from '@/components/incidents/IncidentForm';
 import { IncidentSuccess } from '@/components/incidents/IncidentSuccess';
 
 export default function OcorrenciasPage() {
-  const [submitted, setSubmitted] = useState(false);
+  const [recordedAt, setRecordedAt] = useState<string | null>(null);
 
   return (
     <AppShell>
@@ -14,16 +14,17 @@ export default function OcorrenciasPage() {
         <div>
           <h1 className="text-2xl font-bold text-hydro-text">Relatar Ocorrência</h1>
           <p className="text-sm text-hydro-text-secondary">
-            Registre uma ocorrência — dados simulados, nenhum envio real
+            Registre uma ocorrência — demonstração local, nenhum envio real
           </p>
         </div>
 
-        {submitted ? (
+        {recordedAt ? (
           <IncidentSuccess
-            onReportAnother={() => setSubmitted(false)}
+            recordedAt={recordedAt}
+            onReportAnother={() => setRecordedAt(null)}
           />
         ) : (
-          <IncidentForm onSuccess={() => setSubmitted(true)} />
+          <IncidentForm onSuccess={(at) => setRecordedAt(at)} />
         )}
       </div>
     </AppShell>

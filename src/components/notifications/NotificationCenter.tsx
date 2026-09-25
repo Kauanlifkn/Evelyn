@@ -22,6 +22,21 @@ export function NotificationCenter({ open, onClose }: NotificationCenterProps) {
     clearAll,
   } = useNotifications();
   const panelRef = useRef<HTMLDivElement>(null);
+  const previouslyFocused = useRef<HTMLElement | null>(null);
+
+  // Focus restoration: when the panel closes, return focus to the element
+  // that opened it (keyboard accessibility).
+  useEffect(() => {
+    if (open) {
+      previouslyFocused.current =
+        document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null;
+      return () => {
+        previouslyFocused.current?.focus();
+      };
+    }
+  }, [open]);
 
   // Close on outside click
   useEffect(() => {

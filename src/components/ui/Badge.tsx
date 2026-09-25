@@ -17,6 +17,8 @@ const severityConfig: Record<number, { bg: string; text: string; label: string }
 export function Badge({ severity, className, children }: BadgeProps) {
   const config = severityConfig[severity] ?? severityConfig[0];
   return (
+    // Plain text span on purpose: badges are NOT live regions
+    // (role="status" would announce every badge to screen readers).
     <span
       className={cn(
         'inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-semibold',
@@ -24,7 +26,6 @@ export function Badge({ severity, className, children }: BadgeProps) {
         config.text,
         className
       )}
-      role="status"
     >
       {children ?? config.label}
     </span>

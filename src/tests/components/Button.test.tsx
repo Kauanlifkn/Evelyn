@@ -23,7 +23,9 @@ describe('Button', () => {
   });
 
   it('applies danger variant styles', () => {
+    // RECOVERY-1: danger base moved to danger-dark for AA contrast
+    // (white text on bg-hydro-danger was ~4.1:1).
     render(<Button variant="danger">Perigo</Button>);
-    expect(screen.getByText('Perigo')).toHaveClass('bg-hydro-danger');
+    expect(screen.getByText('Perigo')).toHaveClass('bg-hydro-danger-dark');
   });
 });

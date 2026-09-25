@@ -10,7 +10,7 @@ export const mockNotifications: Notification[] = [
     severity: 3,
     read: false,
     createdAt: '2026-08-05T14:30:00-03:00',
-    link: '/alerts/alert-001',
+    link: '/alertas/alert-001',
     isSimulated: true,
   },
   {
@@ -21,7 +21,7 @@ export const mockNotifications: Notification[] = [
     type: 'shelter',
     read: false,
     createdAt: '2026-08-05T15:00:00-03:00',
-    link: '/shelters/shelter-001',
+    link: '/abrigos',
     isSimulated: true,
   },
   {
@@ -54,7 +54,7 @@ export const mockNotifications: Notification[] = [
     severity: 4,
     read: false,
     createdAt: '2026-08-04T22:15:00-03:00',
-    link: '/alerts/alert-002',
+    link: '/alertas/alert-002',
     isSimulated: true,
   },
   {
@@ -65,7 +65,7 @@ export const mockNotifications: Notification[] = [
     type: 'shelter',
     read: false,
     createdAt: '2026-08-06T08:15:00-03:00',
-    link: '/shelters/shelter-002',
+    link: '/abrigos',
     isSimulated: true,
   },
   {
@@ -77,7 +77,7 @@ export const mockNotifications: Notification[] = [
     severity: 4,
     read: false,
     createdAt: '2026-08-06T06:45:00-03:00',
-    link: '/alerts/alert-004',
+    link: '/alertas/alert-004',
     isSimulated: true,
   },
   {
@@ -89,7 +89,7 @@ export const mockNotifications: Notification[] = [
     severity: 2,
     read: true,
     createdAt: '2026-08-06T08:45:00-03:00',
-    link: '/incidents/incident-003',
+    link: '/ocorrencias',
     isSimulated: true,
   },
   {
@@ -111,7 +111,7 @@ export const mockNotifications: Notification[] = [
     type: 'system',
     read: true,
     createdAt: '2026-08-04T10:35:00-03:00',
-    link: '/alerts/alert-011',
+    link: '/alertas/alert-011',
     isSimulated: true,
   },
   {
@@ -123,7 +123,7 @@ export const mockNotifications: Notification[] = [
     severity: 3,
     read: false,
     createdAt: '2026-08-06T09:05:00-03:00',
-    link: '/incidents/incident-005',
+    link: '/ocorrencias',
     isSimulated: true,
   },
   {

@@ -30,9 +30,14 @@ export function MobileNav({ activePath }: MobileNavProps) {
     ) && moreLinks.some((l) => activePath.startsWith(l.href));
 
   const handleSOS = () => {
-    alert(
-      'Em produção, ligaria para emergência (192). Dados simulados.'
+    // Real action: dial 192 (see SOSButton). Confirmation prevents
+    // accidental triggers from the thumb-reachable center button.
+    const confirmed = window.confirm(
+      'SOS — Ligar para a Central de Emergência (192)?'
     );
+    if (confirmed) {
+      window.location.href = 'tel:192';
+    }
   };
 
   return (

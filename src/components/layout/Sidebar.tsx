@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import {
   Droplets,
@@ -13,7 +12,7 @@ import {
   Bell,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { SearchInput } from '@/components/ui/SearchInput';
+import { SidebarSearch } from '@/components/layout/SidebarSearch';
 import { mockUser } from '@/data/mocks/user';
 import { NotificationBadge } from '@/components/notifications/NotificationBadge';
 
@@ -37,8 +36,6 @@ export function Sidebar({
   onNotificationClick,
   unreadCount = 0,
 }: SidebarProps) {
-  const [search, setSearch] = useState('');
-
   return (
     <aside
       className={cn(
@@ -57,16 +54,8 @@ export function Sidebar({
         </div>
       </div>
 
-      {/* Search */}
-      <div className="px-3 py-3">
-        <SearchInput
-          value={search}
-          onChange={setSearch}
-          placeholder="Buscar..."
-          variant="dark"
-          aria-label="Buscar no menu"
-        />
-      </div>
+      {/* Functional search (pages, alerts, shelters) */}
+      <SidebarSearch />
 
       {/* Navigation */}
       <nav className="flex-1 px-3 space-y-1 mt-1" aria-label="Navegação principal">
@@ -80,7 +69,8 @@ export function Sidebar({
               className={cn(
                 'flex items-center gap-3 px-3 py-2.5 rounded-xl text-sm font-medium transition-all',
                 isActive
-                  ? 'bg-hydro-blue-600 text-white shadow-md shadow-hydro-blue-600/30'
+                  // blue-700: white text on blue-600 is ~4.1:1 (below AA).
+                  ? 'bg-hydro-blue-700 text-white shadow-md shadow-hydro-blue-700/30'
                   : 'text-hydro-text-muted hover:bg-white/8 hover:text-hydro-text-on-dark'
               )}
               aria-current={isActive ? 'page' : undefined}

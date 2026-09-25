@@ -5,9 +5,15 @@ import { cn } from '@/lib/utils';
 
 export function SOSButton() {
   const handleClick = () => {
-    alert(
-      'Em produção, ligaria para emergência (192). Dados simulados.'
+    // Real action: dial 192. In a desktop browser this opens the OS call
+    // handler; on mobile it starts the call. A confirmation prevents
+    // accidental triggers.
+    const confirmed = window.confirm(
+      'SOS — Ligar para a Central de Emergência (192)?'
     );
+    if (confirmed) {
+      window.location.href = 'tel:192';
+    }
   };
 
   return (

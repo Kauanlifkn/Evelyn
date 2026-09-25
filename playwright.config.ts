@@ -10,6 +10,8 @@ export default defineConfig({
   use: {
     baseURL: 'http://localhost:3001',
     trace: 'on-first-retry',
+    // Deterministic clipboard for the share feature (secure context).
+    permissions: ['clipboard-read', 'clipboard-write'],
   },
   projects: [
     {
@@ -22,5 +24,9 @@ export default defineConfig({
     url: 'http://localhost:3001',
     reuseExistingServer: !process.env.CI,
     timeout: 30000,
+    // RECOVERY-1: tests must be hermetic (HIDRO-ALERTA.md §19 — no real
+    // external data in tests). Mock mode is forced regardless of any local
+    // .env.local so E2E never depends on the INMET feed.
+    env: { ALERT_DATA_MODE: 'mock' },
   },
 });

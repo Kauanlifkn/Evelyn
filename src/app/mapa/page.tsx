@@ -5,10 +5,11 @@ import dynamic from 'next/dynamic';
 import { AppShell } from '@/components/layout/AppShell';
 import { MapFilters } from '@/components/map/MapFilters';
 import { MapLegend } from '@/components/map/MapLegend';
+import { MapSummary } from '@/components/map/MapSummary';
+import { toggleMapFilter } from '@/lib/map-filters';
 import { mockAlerts } from '@/data/mocks/alerts';
 import { mockShelters } from '@/data/mocks/shelters';
 import { mockRiskAreas } from '@/data/mocks/risk-areas';
-import type { MapMarker } from '@/types/map';
 
 const RiskMap = dynamic(
   () => import('@/components/map/RiskMap'),
@@ -23,22 +24,11 @@ const RiskMap = dynamic(
 );
 
 export default function MapaPage() {
-  const [activeFilters, setActiveFilters] = useState<string[]>(['all']);
-  const [selectedItem, setSelectedItem] = useState<MapMarker | null>(null);
+  // Contract (src/lib/map-filters.ts): [] = all layers visible.
+  const [activeFilters, setActiveFilters] = useState<string[]>([]);
 
   function handleToggleFilter(filter: string) {
-    if (filter === 'all') {
-      setActiveFilters(['all']);
-    } else {
-      setActiveFilters((prev) => {
-        const withoutAll = prev.filter((f) => f !== 'all');
-        if (withoutAll.includes(filter)) {
-          const next = withoutAll.filter((f) => f !== filter);
-          return next.length === 0 ? ['all'] : next;
-        }
-        return [...withoutAll, filter];
-      });
-    }
+    setActiveFilters((prev) => toggleMapFilter(prev, filter));
   }
 
   return (
@@ -64,10 +54,6 @@ export default function MapaPage() {
                 shelters={mockShelters}
                 riskAreas={mockRiskAreas}
                 filters={activeFilters}
-                selectedItem={selectedItem ? { id: selectedItem.id, type: selectedItem.type } : null}
-                onSelectItem={(sel) => {
-                  setSelectedItem((prev) => prev?.id === sel.id ? null : { ...sel, latitude: 0, longitude: 0, label: sel.type } as MapMarker);
-                }}
               />
             </div>
             <p className="mt-1 text-xs text-hydro-text-secondary">
@@ -78,6 +64,14 @@ export default function MapaPage() {
             <MapLegend />
           </div>
         </div>
+
+        {/* Textual alternative — required for accessibility (§6.3/§15) */}
+        <MapSummary
+          alerts={mockAlerts}
+          shelters={mockShelters}
+          riskAreas={mockRiskAreas}
+          filters={activeFilters}
+        />
       </div>
     </AppShell>
   );

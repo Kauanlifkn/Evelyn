@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 interface IncidentFormProps {
-  onSuccess: () => void;
+  onSuccess: (recordedAt: string) => void;
 }
 
 const incidentTypes = [
@@ -25,6 +25,8 @@ interface FormData {
   waterDepth: string;
   blockedRoad: boolean;
   peopleAtRisk: string;
+  anonymous: boolean;
+  consent: boolean;
   photo: string;
 }
 
@@ -36,10 +38,13 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
     waterDepth: '',
     blockedRoad: false,
     peopleAtRisk: '',
+    anonymous: false,
+    consent: false,
     photo: '',
   });
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -52,15 +57,26 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
     const newErrors: Partial<Record<keyof FormData, string>> = {};
     if (!form.type) newErrors.type = 'Selecione o tipo de ocorrência';
     if (!form.description.trim()) newErrors.description = 'Descreva a ocorrência';
+    if (!form.consent)
+      newErrors.consent =
+        'É necessário autorizar o uso das informações para registrar';
     setErrors(newErrors);
     return Object.keys(newErrors).length === 0;
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (submitting) return;
     if (!validate()) return;
+
+    // RECOVERY-1: there is no backend yet — the "registration" is local to
+    // this page session only. The short delay makes the loading state
+    // perceivable and is explicitly labeled as local in the success screen.
+    setSubmitting(true);
+    await new Promise((resolve) => setTimeout(resolve, 600));
+    setSubmitting(false);
     setSubmitted(true);
-    onSuccess();
+    onSuccess(new Date().toISOString());
   };
 
   if (submitted) return null;
@@ -87,7 +103,7 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
             </option>
           ))}
         </select>
-        {errors.type && <p className="text-xs text-hydro-danger mt-1">{errors.type}</p>}
+        {errors.type && <p className="text-xs text-hydro-danger-dark-text mt-1">{errors.type}</p>}
       </div>
 
       {/* Description */}
@@ -107,7 +123,7 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
           )}
         />
         {errors.description && (
-          <p className="text-xs text-hydro-danger mt-1">{errors.description}</p>
+          <p className="text-xs text-hydro-danger-dark-text mt-1">{errors.description}</p>
         )}
       </div>
 
@@ -173,6 +189,20 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
         />
       </div>
 
+      {/* Anonymous submission */}
+      <div className="flex items-center gap-2">
+        <input
+          id="incident-anonymous"
+          type="checkbox"
+          checked={form.anonymous}
+          onChange={(e) => updateField('anonymous', e.target.checked)}
+          className="h-4 w-4 rounded border-hydro-border text-hydro-blue-600 focus:ring-hydro-blue-500"
+        />
+        <label htmlFor="incident-anonymous" className="text-sm text-hydro-text">
+          Enviar como anônimo (opcional)
+        </label>
+      </div>
+
       {/* Photo (simulated file input) */}
       <div>
         <label className="block text-sm font-medium text-hydro-text mb-1">
@@ -182,22 +212,56 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
           className="flex items-center gap-3 rounded-xl border border-dashed border-hydro-border bg-hydro-surface-blue p-4 cursor-pointer"
           onClick={() => alert('Simulado: Seleção de foto desabilitada na demonstração.')}
         >
-          <Camera className="h-5 w-5 text-hydro-text-secondary" />
+          <Camera className="h-5 w-5 text-hydro-text-secondary" aria-hidden="true" />
           <span className="text-sm text-hydro-text-secondary">
             Clique para adicionar foto
           </span>
         </div>
       </div>
 
+      {/* LGPD consent (required) */}
+      <div
+        className={cn(
+          'rounded-xl border p-3',
+          errors.consent ? 'border-hydro-danger bg-hydro-danger-soft/40' : 'border-hydro-border bg-hydro-surface-blue'
+        )}
+      >
+        <div className="flex items-start gap-2">
+          <input
+            id="incident-consent"
+            type="checkbox"
+            checked={form.consent}
+            onChange={(e) => updateField('consent', e.target.checked)}
+            className="mt-0.5 h-4 w-4 rounded border-hydro-border text-hydro-blue-600 focus:ring-hydro-blue-500"
+          />
+          <label htmlFor="incident-consent" className="text-sm text-hydro-text">
+            Autorizo o uso destas informações pelo Hidro Alerta para fins de
+            demonstração (consentimento — LGPD).{' '}
+            <span className="text-hydro-text-secondary text-xs">
+              Em emergências com vidas em risco, ligue 192 / 193 / 199.
+            </span>
+          </label>
+        </div>
+        {errors.consent && (
+          <p className="text-xs text-hydro-danger-dark-text mt-1.5">{errors.consent}</p>
+        )}
+      </div>
+
       {/* Submit */}
       <div className="pt-2">
-        <Button type="submit" className="w-full">
-          Registrar ocorrência
+        <Button type="submit" className="w-full" disabled={submitting}>
+          {submitting ? 'Registrando localmente...' : 'Registrar ocorrência'}
         </Button>
+        {submitting && (
+          <p className="text-xs text-hydro-text-secondary text-center mt-2" role="status">
+            Registrando nesta demonstração — nenhum dado é enviado a órgãos públicos.
+          </p>
+        )}
       </div>
 
       <p className="text-xs text-hydro-text-secondary text-center">
-        Dados simulados — Nenhuma ocorrência será realmente registrada.
+        Demonstração — o registro fica apenas nesta sessão e{' '}
+        <strong className="text-hydro-text">não é enviado à Defesa Civil</strong>.
       </p>
     </form>
   );

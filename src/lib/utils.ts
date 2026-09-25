@@ -178,9 +178,11 @@ export function getShelterStatusLabel(status: string): string {
 export function getShelterStatusColor(status: string): { bg: string; text: string } {
   switch (status) {
     case 'open':
-      return { bg: 'bg-hydro-safe-soft', text: 'text-hydro-safe' };
+      // safe-dark: AA contrast for text on the soft teal background.
+      return { bg: 'bg-hydro-safe-soft', text: 'text-hydro-safe-dark' };
     case 'crowded':
-      return { bg: 'bg-hydro-danger-soft', text: 'text-hydro-danger' };
+      // danger-dark-text: AA contrast on the soft red background.
+      return { bg: 'bg-hydro-danger-soft', text: 'text-hydro-danger-dark-text' };
     case 'closed':
       return { bg: 'bg-hydro-surface-blue', text: 'text-hydro-text-secondary' };
     default:
@@ -216,6 +218,117 @@ export function getStatusBadgeSeverity(status: string): number {
     default:
       return 0;
   }
+}
+
+/**
+ * getIncidentTypeLabel - Return the Portuguese label for an incident type.
+ */
+/**
+ * getOfficialSeverityLabel - Return the Portuguese label for an official alert severity.
+ */
+export function getOfficialSeverityLabel(severity: string): string {
+  switch (severity) {
+    case 'informative':
+      return 'Informativo';
+    case 'attention':
+      return 'Atenção';
+    case 'danger':
+      return 'Perigo';
+    case 'extreme':
+      return 'Perigo Extremo';
+    default:
+      return 'Desconhecido';
+  }
+}
+
+/**
+ * getOfficialSeverityNumber - Map official severity to numeric (0-3) for Badge component.
+ */
+export function getOfficialSeverityNumber(severity: string): number {
+  switch (severity) {
+    case 'informative':
+      return 0;
+    case 'attention':
+      return 1;
+    case 'danger':
+      return 2;
+    case 'extreme':
+      return 3;
+    default:
+      return 0;
+  }
+}
+
+/**
+ * getOfficialSeverityBg - Return background class for official alert severity.
+ */
+export function getOfficialSeverityBg(severity: string): string {
+  switch (severity) {
+    case 'informative':
+      return 'bg-hydro-blue-500';
+    case 'attention':
+      return 'bg-hydro-warning';
+    case 'danger':
+      return 'bg-hydro-orange';
+    case 'extreme':
+      return 'bg-hydro-danger';
+    default:
+      return 'bg-hydro-blue-500';
+  }
+}
+
+/**
+ * getSourceLabel - Return display label for alert source.
+ */
+export function getSourceLabel(source: string): string {
+  switch (source) {
+    case 'INMET':
+      return 'Instituto Nacional de Meteorologia';
+    case 'MOCK':
+      return 'Demonstração';
+    default:
+      return source;
+  }
+}
+
+/**
+ * getOfficialEventTypeLabel - Return the Portuguese label for an event type
+ * coming from the official (INMET) pipeline, falling back to the shared
+ * alert type labels.
+ */
+export function getOfficialEventTypeLabel(eventType: string): string {
+  switch (eventType) {
+    case 'heavy_rain':
+      return 'Chuvas Intensas';
+    case 'storm':
+      return 'Tempestade';
+    case 'frost':
+      return 'Geada';
+    case 'low_humidity':
+      return 'Baixa Umidade';
+    case 'rain_accumulation':
+      return 'Acumulado de Chuva';
+    case 'coastal_winds':
+      return 'Ventos Costeiros';
+    case 'gale':
+      return 'Vendaval';
+    case 'temperature_drop':
+      return 'Declínio de Temperatura';
+    case 'heat':
+      return 'Onda de Calor';
+    default:
+      return getAlertTypeLabel(eventType);
+  }
+}
+
+/**
+ * telHref - Build a tel: link from a display phone string.
+ * Returns null when the string does not contain a dialable number.
+ */
+export function telHref(phone: string): string | null {
+  const digits = phone.replace(/\D/g, '');
+  if (digits.length < 8) return null;
+  return `tel:+55${digits}`;
 }
 
 /**

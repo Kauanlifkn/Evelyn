@@ -7,7 +7,7 @@ interface MapFiltersProps {
   onToggleFilter: (filter: string) => void;
 }
 
-const filterOptions = [
+const eventTypeOptions = [
   { value: 'all', label: 'Todos' },
   { value: 'flood', label: 'Inundação' },
   { value: 'waterlogging', label: 'Alagamento' },
@@ -18,25 +18,24 @@ const filterOptions = [
   { value: 'shelter', label: 'Abrigos' },
 ];
 
+const originOptions = [
+  { value: 'all', label: 'Todas as origens' },
+  { value: 'inmet', label: 'INMET' },
+  { value: 'sensor', label: 'Sensores' },
+  { value: 'community', label: 'Comunidade' },
+  { value: 'simulated', label: 'Simulados' },
+];
+
 export function MapFilters({
   activeFilters,
   onToggleFilter,
 }: MapFiltersProps) {
+  // Contract (src/lib/map-filters.ts): empty array = all layers visible.
   const isAllActive = activeFilters.length === 0;
-
-  const handleToggle = (filter: string) => {
-    if (filter === 'all') {
-      if (!isAllActive) {
-        activeFilters.forEach((f) => onToggleFilter(f));
-      }
-    } else {
-      onToggleFilter(filter);
-    }
-  };
 
   return (
     <div className="flex flex-wrap gap-2">
-      {filterOptions.map(({ value, label }) => {
+      {eventTypeOptions.map(({ value, label }) => {
         const isActive =
           value === 'all'
             ? isAllActive
@@ -46,12 +45,37 @@ export function MapFilters({
             key={value}
             variant={isActive ? 'primary' : 'secondary'}
             size="sm"
-            onClick={() => handleToggle(value)}
+            aria-pressed={isActive}
+            onClick={() => onToggleFilter(value)}
           >
             {label}
           </Button>
         );
       })}
+    </div>
+  );
+}
+
+export function OriginFilter({
+  activeOrigin = 'all',
+  onOriginChange,
+}: {
+  activeOrigin?: string;
+  onOriginChange?: (origin: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {originOptions.map(({ value, label }) => (
+        <Button
+          key={value}
+          variant={activeOrigin === value ? 'primary' : 'secondary'}
+          size="sm"
+          aria-pressed={activeOrigin === value}
+          onClick={() => onOriginChange?.(value)}
+        >
+          {label}
+        </Button>
+      ))}
     </div>
   );
 }

@@ -13,6 +13,7 @@
   --color-hydro-navy-800: #103967;
 
   /* === Primário — Azul / Ciano === */
+  --color-hydro-blue-800: #0549A8;
   --color-hydro-blue-700: #075ED1;
   --color-hydro-blue-600: #0878F9;
   --color-hydro-blue-500: #1697FF;
@@ -28,7 +29,9 @@
 
   /* === Texto === */
   --color-hydro-text: #10213B;
-  --color-hydro-text-secondary: #62738D;
+  /* Darkened from #62738D for WCAG AA (>=4.5:1) on the page background
+     (#EEF5FF) and soft surfaces. */
+  --color-hydro-text-secondary: #526180;
   --color-hydro-text-on-dark: #F7FBFF;
   --color-hydro-text-muted: #9DB5D3;
 
@@ -54,6 +57,8 @@
   --color-hydro-orange-dark: #9A3412;
   --color-hydro-danger-dark-text: #B91C1C;
   --color-hydro-purple-dark: #6D28D9;
+  /* Teal dark enough for AA contrast on --color-hydro-safe-soft (#DDF8F3). */
+  --color-hydro-safe-dark: #0F766E;
 
   /* === Aliases semânticos === */
   --color-primary: #075ED1;

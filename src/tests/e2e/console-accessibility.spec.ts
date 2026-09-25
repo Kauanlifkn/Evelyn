@@ -131,7 +131,19 @@ test.describe('Console & Network Hygiene', () => {
     await page.goto('/alertas/nonexistent-id');
     await page.waitForLoadState('networkidle');
 
-    expect(errors).toHaveLength(0);
+    // The browser logs one "Failed to load resource: 404" for the expected
+    // /api/alerts/nonexistent-id request — that network log is inherent to
+    // a correct 404 response and is not a runtime error. Anything else
+    // (JS errors, uncaught exceptions, other resources) must not occur.
+    const notFoundLogs = errors.filter(
+      (e) => e.includes('Failed to load resource') && e.includes('404')
+    );
+    const unexpected = errors.filter(
+      (e) => !(e.includes('Failed to load resource') && e.includes('404'))
+    );
+    // RECOVERY-1: the detail request is de-duplicated — exactly one 404.
+    expect(notFoundLogs).toHaveLength(1);
+    expect(unexpected).toHaveLength(0);
     await expect(page.getByText('Alerta não encontrado')).toBeVisible();
   });
 });
@@ -155,7 +167,7 @@ test.describe('Accessibility', () => {
   test('demo banner has role=status', async ({ page }) => {
     await page.goto('/');
     await expect(
-      page.getByRole('status', { name: 'Ambiente de demonstração' })
+      page.getByRole('status', { name: 'Informações sobre os dados' })
     ).toBeAttached();
   });
 
@@ -258,8 +270,10 @@ test.describe('Accessibility', () => {
     await page.goto('/alertas');
     await page.waitForLoadState('networkidle');
 
-    // Severity badges should have text labels (not just color)
-    const badges = page.locator('[role="status"]');
+    // Severity badges are pill spans with text labels (not just color).
+    // RECOVERY-1: badges no longer (mis)use role="status" — that role is
+    // reserved for genuine live regions like the demo banner.
+    const badges = page.locator('span.rounded-full');
     const count = await badges.count();
     expect(count).toBeGreaterThan(0);
 
@@ -327,46 +341,52 @@ test.describe('Accessibility', () => {
  */
 
 test.describe('Interaction Completeness', () => {
-  test('Estou seguro button on alert detail shows feedback', async ({ page }) => {
-    page.on('dialog', async (dialog) => {
-      expect(dialog.message()).toContain('Simulado');
-      await dialog.accept();
-    });
-
+  test('Estou seguro on alert detail registers a LOCAL confirmation (honest)', async ({ page }) => {
     await page.goto('/alertas/alert-001');
     await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: /Estou seguro/i });
     await expect(btn).toBeAttached();
     await btn.click();
+
+    // Honest feedback: stored locally only, never transmitted.
+    const feedback = page.getByText(/registrada apenas neste dispositivo/i);
+    await expect(feedback).toBeVisible();
+    await expect(feedback).toContainText('LOCAL');
   });
 
-  test('Preciso de ajuda button on alert detail shows feedback', async ({ page }) => {
-    page.on('dialog', async (dialog) => {
-      expect(dialog.message()).toContain('Simulado');
-      await dialog.accept();
-    });
-
+  test('Preciso de ajuda opens a dialog with official emergency numbers', async ({ page }) => {
     await page.goto('/alertas/alert-001');
     await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: /Preciso de ajuda/i });
     await expect(btn).toBeAttached();
     await btn.click();
+
+    const dialog = page.getByRole('dialog');
+    await expect(dialog).toBeVisible();
+    await expect(dialog).toContainText('192');
+    await expect(dialog).toContainText('199');
+    await expect(dialog).toContainText('ainda não está conectado');
+
+    // Native dialog closes on Escape (focus stays inside while open).
+    await page.keyboard.press('Escape');
+    await expect(dialog).toBeHidden();
   });
 
-  test('Compartilhar button on alert detail shows feedback', async ({ page }) => {
-    page.on('dialog', async (dialog) => {
-      expect(dialog.message()).toContain('Simulado');
-      await dialog.accept();
-    });
-
+  test('Compartilhar on alert detail really copies the link', async ({ page }) => {
     await page.goto('/alertas/alert-001');
     await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: /Compartilhar/i });
     await expect(btn).toBeAttached();
     await btn.click();
+
+    // RECOVERY-1: real clipboard write — the feedback must reflect the
+    // truth (clipboard permissions granted in playwright.config).
+    await expect(page.getByText('Link copiado para a área de transferência.')).toBeVisible();
+    const clip = await page.evaluate(() => navigator.clipboard.readText());
+    expect(clip).toContain('/alertas/alert-001');
   });
 
   test('Ver no mapa button on shelter shows feedback', async ({ page }) => {

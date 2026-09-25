@@ -6,7 +6,6 @@ import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileHeader } from '@/components/layout/MobileHeader';
 import { MobileNav } from '@/components/layout/MobileNav';
 import { SOSButton } from '@/components/layout/SOSButton';
-import { DemoBanner } from '@/components/layout/DemoBanner';
 import { NotificationCenter } from '@/components/notifications/NotificationCenter';
 import { useNotifications } from '@/hooks/useNotifications';
 
@@ -21,8 +20,6 @@ export function AppShell({ children }: AppShellProps) {
 
   return (
     <div className="min-h-screen">
-      <DemoBanner />
-
       {/* Desktop Sidebar */}
       <Sidebar
         activePath={pathname}
@@ -37,7 +34,7 @@ export function AppShell({ children }: AppShellProps) {
       />
 
       {/* Main Content */}
-      <main className="lg:pl-64 pb-24 lg:pb-0">
+      <main id="conteudo-principal" tabIndex={-1} className="lg:pl-64 pb-24 lg:pb-0">
         <div className="mx-auto max-w-7xl px-4 py-6 sm:px-6 lg:px-8">
           {children}
         </div>
