@@ -62,7 +62,7 @@ export class InMemoryIncidentRepository implements IncidentRepository {
     return this.incidents.find((i) => i.id === id) ?? null;
   }
 
-  clear(): void {
+  async clear(): Promise<void> {
     this.incidents.length = 0;
     sequence = 0;
   }

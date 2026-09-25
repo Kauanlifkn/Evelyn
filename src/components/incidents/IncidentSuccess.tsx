@@ -6,6 +6,8 @@ import { Button } from '@/components/ui/Button';
 
 interface IncidentSuccessProps {
   recordedAt: string;
+  /** Server-provided heading (honesty depends on persistence driver). */
+  heading: string;
   /** Server-provided honesty message (from the API meta). */
   message: string;
   onReportAnother: () => void;
@@ -13,6 +15,7 @@ interface IncidentSuccessProps {
 
 export function IncidentSuccess({
   recordedAt,
+  heading,
   message,
   onReportAnother,
 }: IncidentSuccessProps) {
@@ -23,19 +26,12 @@ export function IncidentSuccess({
           <CheckCircle className="h-8 w-8 text-hydro-safe" aria-hidden="true" />
         </div>
       </div>
-      <h2 className="text-lg font-semibold text-hydro-text mb-2">
-        Ocorrência recebida pelo ambiente de demonstração
-      </h2>
+      <h2 className="text-lg font-semibold text-hydro-text mb-2">{heading}</h2>
       <p className="text-sm text-hydro-text-secondary mb-2">
         Registrada em:{' '}
         <span className="font-medium text-hydro-text">
           {new Date(recordedAt).toLocaleString('pt-BR')}
         </span>
-      </p>
-      <p className="text-sm text-hydro-text-secondary mb-2">
-        Protocolo temporário — o armazenamento é{' '}
-        <strong className="text-hydro-text">em memória</strong> e os dados
-        podem se perder ao reiniciar. A persistência real chega na próxima fase.
       </p>
       <p className="text-sm mb-2 rounded-xl bg-hydro-surface-blue text-hydro-text-secondary px-4 py-3">
         {message}

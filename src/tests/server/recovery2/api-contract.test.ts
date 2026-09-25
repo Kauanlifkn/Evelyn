@@ -154,9 +154,9 @@ describe('GET /api/v1/sources (+ status)', () => {
 });
 
 describe('POST /api/v1/incidents', () => {
-  beforeEach(() => {
-    getServices().incidentRateLimiter.reset();
-    getServices().incidentService['repository']?.clear?.();
+  beforeEach(async () => {
+    getServices().incidentRateLimiter.resetFallback();
+    await getServices().incidentService['repository']?.clear?.();
   });
 
   it('201 creates an incident with temporary id and honest meta', async () => {

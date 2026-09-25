@@ -7,9 +7,9 @@ export const dynamic = 'force-dynamic';
 
 export const GET = withRoute('/api/v1/sources/status', async () => {
   const { sourceService } = getServices();
-  const health = sourceService.getHealth();
+  const health = await sourceService.getHealth();
 
-  // Contract test guard: the exposed object must match the domain schema.
+  // Contract guard: the exposed object must match the domain schema.
   parseWithSchema(sourceHealthSchema, health, 'source health');
 
   return jsonResponse({

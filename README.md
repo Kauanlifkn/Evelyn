@@ -2,7 +2,7 @@
 
 Plataforma de prevenção, monitoramento e resposta a desastres naturais.
 
-> **Estado atual (pós-RECOVERY-1):** sistema **híbrido e honesto** — a integração com os avisos meteorológicos do **INMET fornece alertas oficiais reais** quando ativada; **todos os demais módulos ainda usam dados simulados** e estão rotulados como tal. Em emergência real, ligue 192 (SAMU), 193 (Bombeiros) ou 199 (Defesa Civil).
+> **Estado atual (pós-RECOVERY-3):** persistência real (PostgreSQL/PostGIS + Redis via Docker), API v1 com OpenAPI, sync INMET para o banco e leitura pela API. sistema **híbrido e honesto** — a integração com os avisos meteorológicos do **INMET fornece alertas oficiais reais** quando ativada; **todos os demais módulos ainda usam dados simulados** e estão rotulados como tal. Em emergência real, ligue 192 (SAMU), 193 (Bombeiros) ou 199 (Defesa Civil).
 
 ## Modo de dados (ALERT_DATA_MODE)
 
@@ -95,16 +95,26 @@ Leaflet + react-leaflet com tiles **OpenStreetMap** (única comunicação extern
 - Alertas oficiais (modo official): reais, com fonte, horário e `isOfficial: true`
 - Todo dado simulado carrega `isSimulated: true` e rótulo na UI; o provider de mock marca `isOfficial: false` — **nenhum mock exibe badge OFICIAL**
 
-## Limitações (fase atual — RECOVERY-2 concluída)
+## Persistência (RECOVERY-3)
 
-- Backend modular dentro do Next (Route Handlers + camadas domain/application/infrastructure) — NestJS é decisão futura ([ADR 0005](docs/ADR/0005-api-domain-inside-next.md))
-- Sem banco de dados (repositories in-memory; PostgreSQL/PostGIS na RECOVERY-3); sem autenticação; sem painel operacional
-- Rate limit em memória, por processo — inadequado para múltiplas instâncias (Redis na RECOVERY-3)
-- Ocorrências: armazenamento demo em memória, com consentimento; persistência real na RECOVERY-3
-- Notificações: apenas local (localStorage); sem push
-- Sem PWA/service worker ainda
-- Tsunami: conteúdo educativo; nenhuma fonte oficial conectada (não afirmamos segurança nem risco)
-- `/api/health` é passivo (não dispara fetch da fonte); faça uma chamada a `/api/alerts` para aquecer o status
+```bash
+npm run infra:up     # PostGIS (5434) + Redis (6379), com healthchecks
+npm run db:migrate   # migrations SQL versionadas (Drizzle)
+npm run db:seed      # seed determinística (INMET/MOCK, abrigos, RIO-001, alertas mock)
+```
+
+- Alertas oficiais são **sincronizados ao banco** e a API lê do banco (nunca do feed por request). Sync manual em dev: `POST /api/v1/admin/sync-inmet` com `x-admin-token`.
+- Detalhes: [`docs/DATABASE.md`](docs/DATABASE.md) · [`docs/REDIS.md`](docs/REDIS.md)
+
+## Limitações (fase atual — RECOVERY-3 concluída)
+
+- Backend modular dentro do Next — NestJS é decisão futura ([ADR 0005](docs/ADR/0005-api-domain-inside-next.md))
+- Sem autenticação/RBAC; sem painel operacional; ingestão de sensores ainda não exposta (R-5)
+- Rate limit Redis com fallback em memória documentado (multi-instância: limite efetivo ×instâncias)
+- Ocorrências: persistidas no Hidro Alerta — **não** significa que a Defesa Civil as recebeu (aviso na UI); sem upload de mídia
+- Notificações: apenas local (localStorage); sem push; sem PWA ainda
+- Tsunami: conteúdo educativo; nenhuma fonte oficial conectada
+- Backup/observabilidade de produção: documentados, implementados na R-10
 
 ## Como abrir rapidamente no Linux
 

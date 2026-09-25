@@ -1,20 +1,38 @@
 /**
- * Source application service (RECOVERY-2).
- * Exposes DataSource/SourceHealth contracts for the configured sources.
- * Health is a read model from the alert source port's provider layer.
+ * Source application service (RECOVERY-3).
+ * Health snapshot is now ASYNC: in postgres mode it reads source_health;
+ * in memory mode it wraps the legacy provider read-model.
  */
 
 import type {
   DataSource,
   SourceHealth,
+  SourceStatus,
   SourceType,
 } from '@/server/domain/sources/sources.contract';
 import { nowIso } from '@/server/shared/time';
 
+export interface SourceSnapshot {
+  id: string;
+  name: string;
+  type: SourceType;
+  status: SourceStatus;
+  lastAttemptAt: string | null;
+  lastSuccessAt: string | null;
+  latencyMs: number | null;
+  errorCode: string | null;
+  message: string | null;
+}
+
+export interface SourceSnapshotPort {
+  getHealthSnapshot(): Promise<SourceSnapshot>;
+}
+
+/** Legacy read-model do provider (memória / warm-up). */
 export interface LegacyHealthPort {
   getSourceHealth(): {
     source: string;
-    status: 'ONLINE' | 'STALE' | 'OFFLINE';
+    status: SourceStatus;
     lastAttemptAt: string | null;
     lastSuccessAt: string | null;
     latencyMs: number | null;
@@ -23,52 +41,42 @@ export interface LegacyHealthPort {
   };
 }
 
-const TYPE_BY_SOURCE: Record<string, SourceType> = {
-  INMET: 'OFFICIAL_WEATHER',
-  MOCK: 'DEMO',
-};
-
 export class SourceService {
-  constructor(private readonly legacyHealth: LegacyHealthPort) {}
+  constructor(private readonly snapshotPort: SourceSnapshotPort) {}
 
-  listSources(): DataSource[] {
-    const health = this.snapshot();
+  async listSources(): Promise<DataSource[]> {
+    const snapshot = await this.snapshotPort.getHealthSnapshot();
     const iso = nowIso();
     return [
       {
-        id: health.id,
-        name: health.name,
-        type: health.type,
+        id: snapshot.id,
+        name: snapshot.name,
+        type: snapshot.type,
         createdAt: iso,
         updatedAt: iso,
       },
     ];
   }
 
-  getHealth(): SourceHealth {
-    return this.snapshot();
-  }
-
-  private snapshot(): SourceHealth {
-    const legacy = this.legacyHealth.getSourceHealth();
-    const iso = nowIso();
+  async getHealth(): Promise<SourceHealth> {
+    const snapshot = await this.snapshotPort.getHealthSnapshot();
     return {
-      id: legacy.source,
-      name: sourceDisplayName(legacy.source),
-      type: TYPE_BY_SOURCE[legacy.source] ?? 'OFFICIAL_WEATHER',
-      status: legacy.status,
-      lastAttemptAt: legacy.lastAttemptAt,
-      lastSuccessAt: legacy.lastSuccessAt,
-      latencyMs: legacy.latencyMs,
-      errorCode: legacy.errorCode,
-      message: legacy.message,
-      createdAt: iso,
-      updatedAt: iso,
+      id: snapshot.id,
+      name: snapshot.name,
+      type: snapshot.type,
+      status: snapshot.status,
+      lastAttemptAt: snapshot.lastAttemptAt,
+      lastSuccessAt: snapshot.lastSuccessAt,
+      latencyMs: snapshot.latencyMs,
+      errorCode: snapshot.errorCode,
+      message: snapshot.message,
+      createdAt: snapshot.lastAttemptAt ?? nowIso(),
+      updatedAt: nowIso(),
     };
   }
 }
 
-function sourceDisplayName(source: string): string {
+export function sourceDisplayName(source: string): string {
   switch (source) {
     case 'INMET':
       return 'Instituto Nacional de Meteorologia (INMET)';

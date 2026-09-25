@@ -576,3 +576,28 @@ Fase: API e domínio real dentro do Next ([ADR 0005](./ADR/0005-api-domain-insid
 | §14 headers de segurança | — | X-Content-Type-Options, Referrer-Policy, Permissions-Policy, CSP (tiles OSM em img-src; map validado por E2E) |
 
 Baseline pós-R-2: lint 0/0 · tsc 0 · **Vitest 200/200** (60 novos: domain, services, repositories, adapters, shared, OpenAPI, contratos HTTP) · build OK · audit 0 critical/0 high.
+
+---
+
+## Apêndice G — Delta RECOVERY-3 (2026-09-25)
+
+Fase: persistência real ([ADR 0006](./ADR/0006-database-orm.md), [DATABASE.md](./DATABASE.md), [REDIS.md](./REDIS.md)).
+
+| Requisito (doc oficial) | Antes | Agora |
+|---|---|---|
+| §10.2 PostgreSQL + PostGIS | Inexistente | Docker Compose `postgis/postgis:16-3.4` (host **5434** — 5432/5433 ocupadas; 6379 livre p/ Redis), healthchecks `pg_isready`/`redis-cli ping` |
+| §10.2 Migrations | — | Drizzle-kit, SQL versionado (`drizzle/0000_init.sql` + PostGIS extension), migrate do zero validado |
+| §12 Modelo de dados | 34 entidades ausentes | **9 tabelas reais**: territories, data_sources, source_health, alerts, alert_areas, shelters, incidents, sensors, observations (+ índices GIST/btree; restantes documentadas p/ R-4+) |
+| §5 Honestidade no BANCO | — | CHECKs: severity 0–4; NOT(is_official AND is_simulated); UNIQUE(source_id, external_id) |
+| §21 Deduplicação | — | Upsert por source+external_id; sync real: 72 insert → 2ª rodada 0 insert/72 update, 0 duplicatas |
+| §22 Expiração | — | Expirados permanecem; `active=true` filtra status+validade |
+| §20 Sync INMET | API chamava feed | `syncInmetAlerts()` (lock Redis NX PX 60s, contadores, logs) + endpoint admin DEV com token (404 sem token); API lê do banco |
+| §14 Rate limit | Memória | **Redis distribuído** (INCR+EXPIRE, 429 + Retry-After); fallback memória documentado (fail-open p/ leitura) |
+| §16/§23 Health | — | `ready` checa PostgreSQL, PostGIS (versão), Redis, config, sources; DB down → 503; Redis down → warn; INMET → warn |
+| §18 Frontend | mocks | Frontend lê do banco via API (alertas/abrigos/ocorrências); busca da sidebar agora usa a API (sem import de mock) |
+| §33 Mensagem ocorrências | "ambiente de demonstração" | **"Ocorrência registrada no Hidro Alerta. Este registro não significa que a Defesa Civil recebeu a ocorrência."** (postgres); versão demo mantida p/ driver memória |
+| §26/§38 Privacidade/segurança | — | Sem IP/UA/GPS em incidents; credenciais só em env; connection string nunca logada (mask no script); SSL configurável (`DATABASE_SSL=require`) |
+| §39 Pool | — | Pool `pg` único por processo (max 10); nota Vercel: provedor externo com endpoint pooled |
+| Testes | 201 unit + 83 E2E | **+11 integração REAL** (migrations zero→seed, CHECKs, dedupe, PostGIS ST_Contains/ST_DWithin, sync idempotente c/ fake source, Redis 429, incidentes/abrigos persistidos) — banco `hidro_alerta_test` dedicado; E2E roda contra `hidro_alerta_e2e` isolado |
+
+Baseline pós-R-3: lint 0/0 · tsc 0 · **Vitest 201/201 + 11/11 integração** · build OK · **Playwright 83/83** · audit 0 critical/0 high · containers healthy · sync real idempotente validado.

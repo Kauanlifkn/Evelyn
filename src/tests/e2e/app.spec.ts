@@ -37,8 +37,8 @@ test.describe('Hidro Alerta - E2E', () => {
     // Click the first alert card link
     const firstCard = page.locator('.space-y-3 a').first();
     await firstCard.click();
-    // Should navigate to alert detail page (URL has /alertas/[id])
-    await expect(page).toHaveURL(/\/alertas\/alert-/);
+    // Should navigate to alert detail page (RECOVERY-3: ids are UUIDs)
+    await expect(page).toHaveURL(/\/alertas\/[0-9a-f]{8}-[0-9a-f]{4}-/);
     await expect(
       page.getByRole('status', { name: 'Informações sobre os dados' })
     ).toBeVisible();
@@ -100,18 +100,17 @@ test.describe('Hidro Alerta - E2E', () => {
     await page.getByRole('button', { name: 'Registrar ocorrência' }).click();
     await expect(page.getByText(/É necessário autorizar o uso/)).toBeVisible();
 
-    // With consent, the API receives the report (201) and the success
-    // screen states the demo-only, non-authority nature explicitly.
+    // With consent, the report is PERSISTED (RECOVERY-3: postgres driver
+    // against the isolated e2e database) — and the success screen keeps
+    // the honest disclaimer: Hidro Alerta received it, NOT the Civil
+    // Defense.
     await page.getByLabel(/Autorizo o uso destas informações/).check();
     await page.getByRole('button', { name: 'Registrar ocorrência' }).click();
     await expect(
-      page.getByText('recebida pelo ambiente de demonstração')
+      page.getByRole('heading', { name: 'Ocorrência registrada no Hidro Alerta' })
     ).toBeVisible();
     await expect(
-      page.getByText(/Não enviado à Defesa Civil/)
-    ).toBeVisible();
-    await expect(
-      page.getByText(/armazenamento é?\s*em memória/i)
+      page.getByText(/não significa que a Defesa Civil recebeu a ocorrência/i)
     ).toBeVisible();
   });
 

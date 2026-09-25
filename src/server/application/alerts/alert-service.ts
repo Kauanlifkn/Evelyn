@@ -59,7 +59,10 @@ export class AlertService {
 
   async getById(id: string): Promise<Alert> {
     const all = await this.source.fetchAlerts();
-    const alert = all.find((a) => a.id === id);
+    // Match by persisted UUID **or** external_id — legacy deep-links
+    // (e.g. notification mocks "/alertas/alert-001") keep working against
+    // the source's external identifier.
+    const alert = all.find((a) => a.id === id || a.externalId === id);
     if (!alert) {
       throw AppError.notFound('Alerta não encontrado.', { alertId: id });
     }

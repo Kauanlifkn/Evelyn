@@ -19,7 +19,7 @@ export const GET = withRoute('/api/v1/alerts', async (request) => {
   const pagination = parsePagination(url.searchParams);
 
   const { items, meta } = await alertService.list(filter, pagination);
-  const health = sourceService.getHealth();
+  const health = await sourceService.getHealth();
 
   return jsonResponse({
     data: items,

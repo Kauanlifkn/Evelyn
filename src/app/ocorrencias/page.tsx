@@ -9,6 +9,7 @@ export default function OcorrenciasPage() {
   const [receipt, setReceipt] = useState<{
     recordedAt: string;
     message: string;
+    heading: string;
   } | null>(null);
 
   return (
@@ -24,12 +25,15 @@ export default function OcorrenciasPage() {
         {receipt ? (
           <IncidentSuccess
             recordedAt={receipt.recordedAt}
+            heading={receipt.heading}
             message={receipt.message}
             onReportAnother={() => setReceipt(null)}
           />
         ) : (
           <IncidentForm
-            onSuccess={(recordedAt, message) => setReceipt({ recordedAt, message })}
+            onSuccess={(recordedAt, message, heading) =>
+              setReceipt({ recordedAt, message, heading })
+            }
           />
         )}
       </div>

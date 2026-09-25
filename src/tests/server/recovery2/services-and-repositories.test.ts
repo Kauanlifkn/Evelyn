@@ -3,6 +3,7 @@ import { AlertService, isActiveAlert } from '@/server/application/alerts/alert-s
 import { ShelterService } from '@/server/application/shelters/shelter-service';
 import { IncidentService } from '@/server/application/incidents/incident-service';
 import { SourceService } from '@/server/application/sources/source-service';
+import { snapshotFromLegacy } from '@/server/infrastructure/sources/source-snapshot';
 import { HealthService } from '@/server/application/health/health-service';
 import { InMemoryShelterRepository } from '@/server/infrastructure/repositories/shelter/in-memory-shelter-repository';
 import { InMemoryIncidentRepository } from '@/server/infrastructure/repositories/incident/in-memory-incident-repository';
@@ -305,43 +306,49 @@ describe('IncidentService + InMemory repository', () => {
 });
 
 describe('SourceService', () => {
-  it('adapts the legacy health read-model to the domain contract', () => {
-    const legacyPort = {
-      getSourceHealth: () => ({
-        source: 'INMET',
-        status: 'ONLINE' as const,
-        lastAttemptAt: '2026-09-25T00:00:00Z',
-        lastSuccessAt: '2026-09-25T00:00:00Z',
-        latencyMs: 615,
-        errorCode: null,
-        message: null,
-      }),
-    };
-    const service = new SourceService(legacyPort);
-    const health = service.getHealth();
+  const legacyPort = {
+    getSourceHealth: () => ({
+      source: 'INMET',
+      status: 'ONLINE' as const,
+      lastAttemptAt: '2026-09-25T00:00:00Z',
+      lastSuccessAt: '2026-09-25T00:00:00Z',
+      latencyMs: 615,
+      errorCode: null,
+      message: null,
+    }),
+  };
+
+  it('adapts the legacy health read-model to the domain contract (async snapshot)', async () => {
+    const service = new SourceService({
+      getHealthSnapshot: async () => snapshotFromLegacy(legacyPort.getSourceHealth()),
+    });
+    const health = await service.getHealth();
     expect(health.id).toBe('INMET');
     expect(health.type).toBe('OFFICIAL_WEATHER');
     expect(health.status).toBe('ONLINE');
     expect(health.latencyMs).toBe(615);
 
-    const sources = service.listSources();
+    const sources = await service.listSources();
     expect(sources).toHaveLength(1);
     expect(sources[0].name).toContain('INMET');
   });
 
-  it('marks the demo source as DEMO type', () => {
+  it('marks the demo source as DEMO type', async () => {
     const service = new SourceService({
-      getSourceHealth: () => ({
-        source: 'MOCK',
-        status: 'ONLINE' as const,
-        lastAttemptAt: null,
-        lastSuccessAt: null,
-        latencyMs: null,
-        errorCode: null,
-        message: null,
-      }),
+      getHealthSnapshot: async () =>
+        snapshotFromLegacy({
+          getSourceHealth: () => ({
+            source: 'MOCK',
+            status: 'ONLINE' as const,
+            lastAttemptAt: null,
+            lastSuccessAt: null,
+            latencyMs: null,
+            errorCode: null,
+            message: null,
+          }),
+        }.getSourceHealth()),
     });
-    expect(service.getHealth().type).toBe('DEMO');
+    expect((await service.getHealth()).type).toBe('DEMO');
   });
 });
 

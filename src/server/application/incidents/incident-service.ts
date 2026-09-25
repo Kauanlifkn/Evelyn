@@ -24,7 +24,7 @@ export interface IncidentRepositoryPort {
   list(filter?: IncidentFilter): Promise<Incident[]>;
   getById(id: string): Promise<Incident | null>;
   /** Empties the store (in-memory implementations; used by tests/ops). */
-  clear(): void;
+  clear(): Promise<void>;
 }
 
 export interface IncidentListResult {

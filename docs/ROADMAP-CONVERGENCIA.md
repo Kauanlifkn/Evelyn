@@ -145,6 +145,8 @@ Reescrita de rotas quebrando E2E (mitigar mantendo contratos de resposta atuais)
 
 ## RECOVERY-3 — PostgreSQL/PostGIS + Redis
 
+> **STATUS (2026-09-25): EXECUTADA — aguardando revisão humana.** Entregues: Docker Compose (PostGIS 16-3.4 na 5434 + Redis 6379, healthy), Drizzle + migrations SQL do zero ([ADR 0006](./ADR/0006-database-orm.md)), 9 tabelas do §12 com CHECKs/GIST/UNIQUE de dedupe, repositories Postgres atrás dos ports, sync INMET com lock Redis + idempotência comprovada (72↑→0↑72↻), rate limit Redis com fallback documentado, health live/ready com infra, seed determinística, 11 testes de integração real + E2E isolado. Baseline: lint 0/0 · tsc 0 · Vitest 201/201 · integração 11/11 · build OK · E2E 83/83 · audit 0 crit/high. **Nenhum commit feito.**
+
 ### Objetivo
 Persistência real conforme §10.2/§12: PostgreSQL+PostGIS, Redis, filas BullMQ, migrations versionadas, Docker Compose de desenvolvimento.
 

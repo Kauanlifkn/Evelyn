@@ -57,9 +57,13 @@ export const incidentSchema = z.object({
   consent: z.boolean(),
   reportedAt: z.string(),
   status: incidentStatusSchema,
-  /** Always the demo source in this phase. */
   source: z.string().min(1),
-  isSimulated: z.literal(true),
+  /**
+   * RECOVERY-3: real persistence → real reports are NOT simulated
+   * (false). The in-memory demo repository keeps true. The flag always
+   * tells the truth about the record's nature.
+   */
+  isSimulated: z.boolean(),
   createdAt: z.string(),
   updatedAt: z.string(),
 });

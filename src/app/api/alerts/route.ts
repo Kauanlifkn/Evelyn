@@ -16,10 +16,10 @@ export const dynamic = 'force-dynamic';
 export const GET = withRoute('/api/alerts', async () => {
   const { alertService, sourceService } = getServices();
   const { items } = await alertService.list(
-    {},
+    { active: 'true' },
     { page: 1, pageSize: 100 }
   );
-  const health = sourceService.getHealth();
+  const health = await sourceService.getHealth();
 
   const legacyData = items.map((a) => ({
     id: a.id,

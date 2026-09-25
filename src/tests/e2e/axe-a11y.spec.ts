@@ -40,7 +40,9 @@ test.describe('Accessibility (axe-core WCAG A/AA)', () => {
   }
 
   test('no critical/serious violations on alert detail', async ({ page }) => {
-    await page.goto('/alertas/alert-001');
+    const res = await page.request.get('/api/v1/alerts?pageSize=1');
+    const { data } = await res.json();
+    await page.goto(`/alertas/${data[0].id}`);
     await page.waitForLoadState('networkidle');
 
     const results = await new AxeBuilder({ page })

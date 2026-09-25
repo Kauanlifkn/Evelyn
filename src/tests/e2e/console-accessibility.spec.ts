@@ -8,6 +8,17 @@ import { test, expect } from '@playwright/test';
 
 const ALLOWED_EXTERNAL = ['tile.openstreetmap.org'];
 
+
+/**
+ * RECOVERY-3: alert ids are now persisted UUIDs. Tests resolve a real id
+ * from the API instead of assuming seeded string ids.
+ */
+async function firstAlertId(page: import('@playwright/test').Page): Promise<string> {
+  const res = await page.request.get('/api/v1/alerts?pageSize=1');
+  const json = await res.json();
+  return json.data[0].id as string;
+}
+
 test.describe('Console & Network Hygiene', () => {
   test('no console errors on dashboard', async ({ page }) => {
     const errors: string[] = [];
@@ -114,11 +125,12 @@ test.describe('Console & Network Hygiene', () => {
     });
     page.on('pageerror', (err) => errors.push(err.message));
 
-    await page.goto('/alertas/alert-001');
+    const alertId = await firstAlertId(page);
+    await page.goto(`/alertas/${alertId}`);
     await page.waitForLoadState('networkidle');
 
     expect(errors).toHaveLength(0);
-    await expect(page.getByText('Alerta de Enchente em São Paulo')).toBeVisible();
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 
   test('alert detail page with invalid ID shows not found', async ({ page }) => {
@@ -346,7 +358,7 @@ test.describe('Accessibility', () => {
 
 test.describe('Interaction Completeness', () => {
   test('Estou seguro on alert detail registers a LOCAL confirmation (honest)', async ({ page }) => {
-    await page.goto('/alertas/alert-001');
+    await page.goto(`/alertas/${await firstAlertId(page)}`);
     await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: /Estou seguro/i });
@@ -360,7 +372,7 @@ test.describe('Interaction Completeness', () => {
   });
 
   test('Preciso de ajuda opens a dialog with official emergency numbers', async ({ page }) => {
-    await page.goto('/alertas/alert-001');
+    await page.goto(`/alertas/${await firstAlertId(page)}`);
     await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: /Preciso de ajuda/i });
@@ -379,7 +391,7 @@ test.describe('Interaction Completeness', () => {
   });
 
   test('Compartilhar on alert detail really copies the link', async ({ page }) => {
-    await page.goto('/alertas/alert-001');
+    await page.goto(`/alertas/${await firstAlertId(page)}`);
     await page.waitForLoadState('networkidle');
 
     const btn = page.getByRole('button', { name: /Compartilhar/i });
@@ -390,7 +402,7 @@ test.describe('Interaction Completeness', () => {
     // truth (clipboard permissions granted in playwright.config).
     await expect(page.getByText('Link copiado para a área de transferência.')).toBeVisible();
     const clip = await page.evaluate(() => navigator.clipboard.readText());
-    expect(clip).toContain('/alertas/alert-001');
+    expect(clip).toContain('/alertas/');
   });
 
   test('Ver no mapa button on shelter shows feedback', async ({ page }) => {

@@ -5,6 +5,6 @@ export const dynamic = 'force-dynamic';
 
 export const GET = withRoute('/api/v1/sources', async () => {
   const { sourceService } = getServices();
-  const sources = sourceService.listSources();
+  const sources = await sourceService.listSources();
   return jsonResponse({ data: sources, meta: { count: sources.length } });
 });

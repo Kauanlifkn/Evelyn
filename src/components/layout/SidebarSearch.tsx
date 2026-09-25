@@ -2,10 +2,11 @@
 
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { useQuery } from '@tanstack/react-query';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { cn } from '@/lib/utils';
-import { mockAlerts } from '@/data/mocks/alerts';
-import { mockShelters } from '@/data/mocks/shelters';
+import type { Alert } from '@/server/domain/alerts/alert.contract';
+import type { Shelter } from '@/server/domain/shelters/shelter.contract';
 
 interface SearchResult {
   href: string;
@@ -25,9 +26,9 @@ const PAGE_RESULTS: SearchResult[] = [
 const MAX_RESULTS = 8;
 
 /**
- * Functional, keyboard-navigable search over the destinations that exist
- * in the current frontend: static pages, alerts and shelters (simulated
- * data, labeled). Replaces the previous input that had no effect.
+ * Functional, keyboard-navigable search (RECOVERY-2/3). Data comes from
+ * the API — NOT from mock imports (doc §18): alerts via /api/v1/alerts
+ * (persisted, official or simulated) and shelters via /api/v1/shelters.
  */
 export function SidebarSearch() {
   const router = useRouter();
@@ -36,6 +37,32 @@ export function SidebarSearch() {
   const [activeIndex, setActiveIndex] = useState(0);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  const alertsQuery = useQuery({
+    queryKey: ['v1', 'search', 'alerts'],
+    queryFn: async (): Promise<Alert[]> => {
+      const res = await fetch('/api/v1/alerts?pageSize=100');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      return json.data as Alert[];
+    },
+    staleTime: 60_000,
+  });
+  const sheltersQuery = useQuery({
+    queryKey: ['v1', 'search', 'shelters'],
+    queryFn: async (): Promise<Shelter[]> => {
+      const res = await fetch('/api/v1/shelters?pageSize=100');
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const json = await res.json();
+      return json.data as Shelter[];
+    },
+    staleTime: 60_000,
+  });
+
+  // Stable references (react-hooks/exhaustive-deps): wrap the default
+  // empty arrays in their own useMemo.
+  const alerts = useMemo(() => alertsQuery.data ?? [], [alertsQuery.data]);
+  const shelters = useMemo(() => sheltersQuery.data ?? [], [sheltersQuery.data]);
+
   const results = useMemo<SearchResult[]>(() => {
     const q = query.trim().toLowerCase();
     if (!q) return [];
@@ -43,25 +70,25 @@ export function SidebarSearch() {
     const pageHits = PAGE_RESULTS.filter((p) =>
       p.label.toLowerCase().includes(q)
     );
-    const alertHits = mockAlerts
+    const alertHits = alerts
       .filter(
         (a) =>
           a.title.toLowerCase().includes(q) ||
-          a.city.toLowerCase().includes(q)
+          a.areas.some((area) => area.areaDesc.toLowerCase().includes(q))
       )
       .slice(0, 4)
       .map(
         (a): SearchResult => ({
           href: `/alertas/${a.id}`,
           label: a.title,
-          group: 'Alertas (simulados)',
+          group: a.isOfficial ? 'Alertas oficiais' : 'Alertas (simulados)',
         })
       );
-    const shelterHits = mockShelters
+    const shelterHits = shelters
       .filter(
         (s) =>
           s.name.toLowerCase().includes(q) ||
-          s.city.toLowerCase().includes(q)
+          s.address.toLowerCase().includes(q)
       )
       .slice(0, 3)
       .map(
@@ -73,9 +100,9 @@ export function SidebarSearch() {
       );
 
     return [...pageHits, ...alertHits, ...shelterHits].slice(0, MAX_RESULTS);
-  }, [query]);
+  }, [query, alerts, shelters]);
 
-  // Close on outside click / Escape handled here; focus stays in input.
+  // Close on outside click; Escape handled on keydown.
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {
       if (
@@ -144,7 +171,9 @@ export function SidebarSearch() {
         >
           {results.length === 0 ? (
             <p className="px-3 py-2 text-sm text-hydro-text-muted">
-              Nenhum resultado para “{query.trim()}”.
+              {query.trim() === ''
+                ? 'Digite para buscar.'
+                : `Nenhum resultado para “${query.trim()}”.`}
             </p>
           ) : (
             results.map((result, i) => (

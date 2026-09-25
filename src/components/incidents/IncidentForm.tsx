@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 interface IncidentFormProps {
-  onSuccess: (recordedAt: string, message: string) => void;
+  onSuccess: (recordedAt: string, message: string, heading: string) => void;
 }
 
 const incidentTypes = [
@@ -71,9 +71,9 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
     setApiError(null);
     if (!validate()) return;
 
-    // RECOVERY-2: the form now reaches the real API
-    // (POST /api/v1/incidents → IncidentService → in-memory repository).
-    // Storage is still temporary/demo — the success screen says so.
+    // RECOVERY-3: the form posts to the real API — the record is persisted
+    // according to the configured driver; the success screen (server-driven
+    // heading + message) always states exactly what was and was NOT done.
     setSubmitting(true);
     try {
       const res = await fetch('/api/v1/incidents', {
@@ -98,7 +98,8 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
         onSuccess(
           json.data.reportedAt as string,
           (json.meta?.message as string) ??
-            'Recebido apenas pelo ambiente de demonstração. Não enviado à Defesa Civil.'
+            'Este registro não significa que a Defesa Civil recebeu a ocorrência.',
+          (json.meta?.heading as string) ?? 'Ocorrência registrada no Hidro Alerta'
         );
         return;
       }

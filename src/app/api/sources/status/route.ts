@@ -10,7 +10,7 @@ export const dynamic = 'force-dynamic';
 
 export const GET = withRoute('/api/sources/status', async () => {
   const { sourceService } = getServices();
-  const health = sourceService.getHealth();
+  const health = await sourceService.getHealth();
 
   return Response.json({
     sources: [

@@ -11,11 +11,12 @@ test.describe('Sidebar search (functional navigation)', () => {
     await page.goto('/');
 
     const input = page.getByRole('combobox', { name: 'Buscar no menu' });
-    await input.fill('petrópolis');
-    await expect(page.getByRole('listbox')).toBeVisible();
+    await input.fill('deslizamento');
+    // Wait for the resolved result (API data) before Enter.
+    await expect(page.getByRole('option').first()).toBeVisible();
 
     await input.press('Enter');
-    await expect(page).toHaveURL(/\/alertas\/alert-\d{3}$/);
+    await expect(page).toHaveURL(/\/alertas\/[0-9a-f]{8}-[0-9a-f]{4}-/);
     await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
   });
 

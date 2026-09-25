@@ -29,12 +29,12 @@ export const GET = withRoute('/api/v1/incidents', async (request) => {
 });
 
 export const POST = withRoute('/api/v1/incidents', async (request, { correlationId }) => {
-  const { incidentService, incidentRateLimiter } = getServices();
+  const { incidentService, incidentRateLimiter, driver } = getServices();
 
   // Rate limit BEFORE parsing — do not spend work on floods.
-  // Key uses the raw socket identity only as an in-memory bucket; it is
+  // Key uses the raw socket identity only as a rate-limit bucket; it is
   // never persisted or logged (privacy, doc §14).
-  incidentRateLimiter.enforce(clientKey(request, 'POST /api/v1/incidents'));
+  await incidentRateLimiter.enforce(clientKey(request, 'POST /api/v1/incidents'));
 
   // Malformed JSON becomes null → schema validation fails with 400.
   const body = await request.json().catch(() => null);
@@ -49,17 +49,26 @@ export const POST = withRoute('/api/v1/incidents', async (request, { correlation
   // Contract guard: what we store is exactly the published contract.
   parseWithSchema(incidentSchema, incident, 'ocorrência criada');
 
+  // HONESTY (doc §1/§2) — the message always states exactly what happened:
+  const meta =
+    driver === 'postgres'
+      ? {
+          heading: 'Ocorrência registrada no Hidro Alerta',
+          message:
+            'Ocorrência registrada no Hidro Alerta. Este registro não significa ' +
+            'que a Defesa Civil recebeu a ocorrência.',
+        }
+      : {
+          heading: 'Ocorrência recebida pelo ambiente de demonstração',
+          message:
+            'Recebido apenas pelo ambiente de demonstração do Hidro Alerta. ' +
+            'Não enviado à Defesa Civil. Armazenamento temporário em memória.',
+        };
+
   return jsonResponse(
     {
       data: incident,
-      meta: {
-        // HONESTY (doc §1/§2): in-memory demo storage, nothing sent to
-        // civil defense, nothing durable yet (RECOVERY-3 adds PostgreSQL).
-        message:
-          'Recebido apenas pelo ambiente de demonstração do Hidro Alerta. ' +
-          'Não enviado à Defesa Civil. Armazenamento temporário em memória.',
-        correlationId,
-      },
+      meta: { ...meta, correlationId },
     },
     201
   );
