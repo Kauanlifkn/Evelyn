@@ -1,52 +1,58 @@
 /**
- * GET /api/alerts
+ * GET /api/alerts (LEGACY — kept for compatibility, RECOVERY-2).
  *
- * Returns active official alerts from the configured provider.
- * Response includes metadata about source and timing.
+ * Delegates to the same AlertService/SourceService used by /api/v1 and
+ * maps the domain contract back to the legacy wire shape (string severity)
+ * so existing consumers do not break. New integrations should use
+ * /api/v1/alerts.
  */
 
-import { NextResponse } from 'next/server';
-import { getAlertProvider, getAlertDataMode } from '@/server/providers/alerts';
+import { getServices, getDataMode } from '@/server/infrastructure/composition';
+import { withRoute } from '@/server/infrastructure/http/route';
+import { legacySeverity, legacyStatus } from '@/server/infrastructure/providers/alerts/legacy-mapping';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
-export async function GET() {
-  try {
-    const provider = getAlertProvider();
-    const alerts = await provider.fetchActiveAlerts();
-    const activeAlerts = alerts.filter((a) => a.status === 'active');
-    const health = provider.getSourceHealth();
+export const GET = withRoute('/api/alerts', async () => {
+  const { alertService, sourceService } = getServices();
+  const { items } = await alertService.list(
+    {},
+    { page: 1, pageSize: 100 }
+  );
+  const health = sourceService.getHealth();
 
-    return NextResponse.json({
-      data: activeAlerts,
-      meta: {
-        source: health.source,
-        isOfficial: health.source !== 'MOCK',
-        fetchedAt: health.lastSuccessAt,
-        count: activeAlerts.length,
-        totalCount: alerts.length,
-        sourceStatus: health.status,
-        dataMode: getAlertDataMode(),
-      },
-    });
-  } catch (error) {
-    console.error('[/api/alerts] Unexpected error:', error);
-    return NextResponse.json(
-      {
-        data: [],
-        meta: {
-          source: 'UNKNOWN',
-          isOfficial: false,
-          fetchedAt: null,
-          count: 0,
-          totalCount: 0,
-          sourceStatus: 'OFFLINE',
-          dataMode: getAlertDataMode(),
-          error: 'Internal server error',
-        },
-      },
-      { status: 500 }
-    );
-  }
-}
+  const legacyData = items.map((a) => ({
+    id: a.id,
+    source: a.source,
+    sourceType: a.sourceType,
+    externalId: a.externalId,
+    title: a.title,
+    description: a.description,
+    instruction: a.instruction,
+    eventType: a.eventType,
+    severity: legacySeverity(a.severity),
+    originalSeverity: a.originalSeverity,
+    status: legacyStatus(a.status),
+    issuedAt: a.issuedAt,
+    effectiveAt: a.effectiveAt,
+    expiresAt: a.expiresAt,
+    areas: a.areas,
+    isOfficial: a.isOfficial,
+    isSimulated: a.isSimulated,
+    sourceUrl: a.sourceUrl,
+    fetchedAt: a.fetchedAt,
+  }));
+
+  return Response.json({
+    data: legacyData,
+    meta: {
+      source: health.id,
+      isOfficial: health.id !== 'MOCK',
+      fetchedAt: health.lastSuccessAt,
+      count: legacyData.length,
+      totalCount: legacyData.length,
+      sourceStatus: health.status,
+      dataMode: getDataMode(),
+    },
+  });
+});

@@ -1,28 +1,28 @@
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { ShelterCard } from '@/components/shelters/ShelterCard';
-import type { Shelter } from '@/types/shelter';
+import type { Shelter } from '@/server/domain/shelters/shelter.contract';
 
 const shelter: Shelter = {
   id: 'shelter-001',
   name: 'CEU Vila Guilherme',
   address: 'Rua Carolina Fioravanti, 100 - Vila Guilherme',
-  city: 'São Paulo',
-  state: 'SP',
   latitude: -23.501,
   longitude: -46.6255,
-  distance: 1.2,
+  distanceKm: 1.2,
   capacity: 500,
-  occupied: 312,
-  availableSpots: 188,
-  accessible: true,
-  acceptsAnimals: true,
-  hasFood: true,
-  hasMedical: true,
-  contact: '(11) 3456-7890',
+  estimatedVacancies: 188,
   status: 'open',
-  lastUpdate: '2026-08-06T09:30:00-03:00',
+  accessibility: true,
+  acceptsAnimals: true,
+  foodAvailable: true,
+  medicalSupport: true,
+  phone: '(11) 3456-7890',
+  lastUpdatedAt: '2026-08-06T09:30:00-03:00',
+  source: 'MOCK',
   isSimulated: true,
+  createdAt: '2026-08-06T09:30:00-03:00',
+  updatedAt: '2026-08-06T09:30:00-03:00',
 };
 
 describe('ShelterCard — RECOVERY-1 completeness', () => {
@@ -32,7 +32,7 @@ describe('ShelterCard — RECOVERY-1 completeness', () => {
   });
 
   it('hides the alimentação chip when hasFood is false', () => {
-    render(<ShelterCard shelter={{ ...shelter, hasFood: false }} />);
+    render(<ShelterCard shelter={{ ...shelter, foodAvailable: false }} />);
     expect(screen.queryByText('Alimentação')).not.toBeInTheDocument();
   });
 
@@ -45,7 +45,7 @@ describe('ShelterCard — RECOVERY-1 completeness', () => {
   });
 
   it('handles the absence of a phone number without breaking', () => {
-    render(<ShelterCard shelter={{ ...shelter, contact: '' }} />);
+    render(<ShelterCard shelter={{ ...shelter, phone: null }} />);
     expect(screen.getByText('Sem telefone informado')).toBeInTheDocument();
     expect(
       screen.queryByRole('link', { name: /Ligar para/ })

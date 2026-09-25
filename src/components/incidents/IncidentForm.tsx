@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 
 interface IncidentFormProps {
-  onSuccess: (recordedAt: string) => void;
+  onSuccess: (recordedAt: string, message: string) => void;
 }
 
 const incidentTypes = [
@@ -45,6 +45,7 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
   const [errors, setErrors] = useState<Partial<Record<keyof FormData, string>>>({});
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
 
   const updateField = (field: keyof FormData, value: string | boolean) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -67,16 +68,72 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
+    setApiError(null);
     if (!validate()) return;
 
-    // RECOVERY-1: there is no backend yet — the "registration" is local to
-    // this page session only. The short delay makes the loading state
-    // perceivable and is explicitly labeled as local in the success screen.
+    // RECOVERY-2: the form now reaches the real API
+    // (POST /api/v1/incidents → IncidentService → in-memory repository).
+    // Storage is still temporary/demo — the success screen says so.
     setSubmitting(true);
-    await new Promise((resolve) => setTimeout(resolve, 600));
-    setSubmitting(false);
-    setSubmitted(true);
-    onSuccess(new Date().toISOString());
+    try {
+      const res = await fetch('/api/v1/incidents', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          type: form.type,
+          description: form.description.trim(),
+          location: form.location.trim() || 'Não informado',
+          waterDepth: form.waterDepth === '' ? null : Number(form.waterDepth),
+          roadBlocked: form.blockedRoad,
+          peopleAtRisk: form.peopleAtRisk === '' ? 0 : Number(form.peopleAtRisk),
+          anonymous: form.anonymous,
+          consent: form.consent,
+        }),
+      });
+
+      const json = await res.json().catch(() => null);
+
+      if (res.status === 201 && json?.data) {
+        setSubmitted(true);
+        onSuccess(
+          json.data.reportedAt as string,
+          (json.meta?.message as string) ??
+            'Recebido apenas pelo ambiente de demonstração. Não enviado à Defesa Civil.'
+        );
+        return;
+      }
+
+      if (res.status === 429) {
+        setApiError(
+          'Muitas solicitações em pouco tempo. Aguarde um instante e tente novamente.'
+        );
+        return;
+      }
+
+      const issues = json?.error?.details?.issues as
+        | Array<{ path: string; message: string }>
+        | undefined;
+      if (res.status === 400 && issues && issues.length > 0) {
+        const first = issues[0];
+        const field = String(first.path || '').split('.')[0];
+        if (field === 'consent') {
+          setApiError(first.message);
+        } else if (field === 'description') {
+          setApiError(`Descrição: ${first.message}`);
+        } else {
+          setApiError(first.message);
+        }
+        return;
+      }
+
+      setApiError('Não foi possível registrar agora. Tente novamente.');
+    } catch {
+      setApiError(
+        'Falha de conexão com o serviço. Verifique sua internet e tente novamente.'
+      );
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   if (submitted) return null;
@@ -247,14 +304,24 @@ export function IncidentForm({ onSuccess }: IncidentFormProps) {
         )}
       </div>
 
+      {/* API error (validation / rate limit / network) — never a fake success */}
+      {apiError && (
+        <p
+          role="alert"
+          className="rounded-xl bg-hydro-danger-soft text-hydro-danger-dark-text text-sm px-4 py-3"
+        >
+          {apiError}
+        </p>
+      )}
+
       {/* Submit */}
       <div className="pt-2">
         <Button type="submit" className="w-full" disabled={submitting}>
-          {submitting ? 'Registrando localmente...' : 'Registrar ocorrência'}
+          {submitting ? 'Enviando...' : 'Registrar ocorrência'}
         </Button>
         {submitting && (
           <p className="text-xs text-hydro-text-secondary text-center mt-2" role="status">
-            Registrando nesta demonstração — nenhum dado é enviado a órgãos públicos.
+            Enviando ao ambiente de demonstração — nenhum dado é enviado a órgãos públicos.
           </p>
         )}
       </div>

@@ -278,6 +278,27 @@ export function getOfficialSeverityBg(severity: string): string {
 }
 
 /**
+ * getSeverityBadgeBg - Background indicator class for the numeric
+ * domain severity (0–4, RECOVERY-2 contract).
+ */
+export function getSeverityBadgeBg(severity: number): string {
+  switch (severity) {
+    case 0:
+      return 'bg-hydro-blue-500';
+    case 1:
+      return 'bg-hydro-warning';
+    case 2:
+      return 'bg-hydro-orange';
+    case 3:
+      return 'bg-hydro-danger';
+    case 4:
+      return 'bg-hydro-purple';
+    default:
+      return 'bg-hydro-blue-500';
+  }
+}
+
+/**
  * getSourceLabel - Return display label for alert source.
  */
 export function getSourceLabel(source: string): string {

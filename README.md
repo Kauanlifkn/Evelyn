@@ -58,7 +58,7 @@ npm run build
 npm start
 ```
 
-## Rotas
+## Rotas (frontend)
 
 | Rota | Descrição |
 |---|---|
@@ -66,18 +66,18 @@ npm start
 | `/mapa` | Mapa de risco interativo + **resumo textual acessível** |
 | `/alertas` | Central de alertas (oficiais ou simulados, conforme o modo) |
 | `/alertas/[id]` | Detalhes de um alerta (oficial ou simulado) |
-| `/abrigos` | Lista de abrigos (simulados) |
-| `/ocorrencias` | Relatar ocorrência (demonstração local — não envia a órgãos) |
+| `/abrigos` | Lista de abrigos (via API; simulados) |
+| `/ocorrencias` | Relatar ocorrência (POST na API; armazenamento demo em memória — não envia a órgãos) |
 | `/tsunami` | Riscos costeiros e tsunami (educativo; sem fonte oficial conectada) |
 
-### API
+## API
 
-| Rota | Descrição |
-|---|---|
-| `GET /api/alerts` | Alertas ativos do provider configurado (INMET ou mock) |
-| `GET /api/alerts/[id]` | Um alerta por ID (404 se inexistente) |
-| `GET /api/sources/status` | Saúde da fonte (ONLINE/STALE/OFFLINE, latência, última sync) |
-| `GET /api/health` | Health check da aplicação/fonte |
+- **Superfície versionada:** `/api/v1/*` — alertas (filtros + paginação), fontes/status, abrigos, ocorrências (POST com consentimento e rate limit 5/min), `health/live` e `health/ready`.
+- **OpenAPI:** `GET /api/openapi.json` (schemas gerados dos contratos Zod).
+- **Correlation ID:** `x-correlation-id` aceito/gerado e ecoado em toda resposta.
+- **Erros padronizados:** envelope `error.{code,message,correlationId,details}` — nunca stack trace.
+- **Legado:** `/api/alerts`, `/api/sources/status`, `/api/health` seguem ativos delegando aos mesmos services.
+- Detalhes: [`docs/API.md`](docs/API.md) · [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md) · [ADR 0005](docs/ADR/0005-api-domain-inside-next.md)
 
 ## Mapa
 
@@ -95,11 +95,12 @@ Leaflet + react-leaflet com tiles **OpenStreetMap** (única comunicação extern
 - Alertas oficiais (modo official): reais, com fonte, horário e `isOfficial: true`
 - Todo dado simulado carrega `isSimulated: true` e rótulo na UI; o provider de mock marca `isOfficial: false` — **nenhum mock exibe badge OFICIAL**
 
-## Limitações (fase atual — RECOVERY-1 concluída)
+## Limitações (fase atual — RECOVERY-2 concluída)
 
-- Sem backend próprio: 4 Route Handlers dentro do Next (convergência documentada em `docs/ROADMAP-CONVERGENCIA.md`)
-- Sem banco de dados; sem autenticação; sem painel operacional
-- Ocorrências: registro apenas local/demonstrativo, com consentimento LGPD simulado
+- Backend modular dentro do Next (Route Handlers + camadas domain/application/infrastructure) — NestJS é decisão futura ([ADR 0005](docs/ADR/0005-api-domain-inside-next.md))
+- Sem banco de dados (repositories in-memory; PostgreSQL/PostGIS na RECOVERY-3); sem autenticação; sem painel operacional
+- Rate limit em memória, por processo — inadequado para múltiplas instâncias (Redis na RECOVERY-3)
+- Ocorrências: armazenamento demo em memória, com consentimento; persistência real na RECOVERY-3
 - Notificações: apenas local (localStorage); sem push
 - Sem PWA/service worker ainda
 - Tsunami: conteúdo educativo; nenhuma fonte oficial conectada (não afirmamos segurança nem risco)
@@ -118,8 +119,8 @@ O servidor roda na **porta 3001** (configurada em `package.json`).
 ## Stack
 
 - Next.js 16 (App Router, Turbopack)
-- React 19
-- TypeScript 5
+- React 19 + TanStack Query 5
+- TypeScript 5 + Zod 4 (contratos/validação)
 - Tailwind CSS 4
 - Leaflet + react-leaflet
 - Vitest + Playwright (+ axe-core)

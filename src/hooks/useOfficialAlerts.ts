@@ -1,143 +1,113 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import type { OfficialAlert } from '@/server/providers/alerts/types';
+import { useQuery } from '@tanstack/react-query';
+import type {
+  Alert,
+  AlertSeverity,
+} from '@/server/domain/alerts/alert.contract';
+import type { SourceHealth } from '@/server/domain/sources/sources.contract';
 
-interface AlertsResponse {
-  data: OfficialAlert[];
-  meta: {
-    source: string;
-    isOfficial: boolean;
-    fetchedAt: string | null;
-    count: number;
-    totalCount: number;
-    sourceStatus: string;
-    dataMode: string;
-    error?: string;
-  };
+/**
+ * Alerts hooks (RECOVERY-2) — TanStack Query against /api/v1.
+ * Frontend → API → AlertService → AlertSourcePort (INMET | mock).
+ */
+
+export interface AlertsPageMeta {
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
+  source: string;
+  isOfficial: boolean;
+  sourceStatus: 'ONLINE' | 'STALE' | 'OFFLINE';
+  dataMode: string;
 }
 
-interface UseOfficialAlertsReturn {
-  alerts: OfficialAlert[];
-  meta: AlertsResponse['meta'] | null;
+export interface UseAlertsResult {
+  alerts: Alert[];
+  meta: AlertsPageMeta | null;
   loading: boolean;
   error: string | null;
   refetch: () => void;
 }
 
-// Module-level in-flight/result cache per alert id. Prevents duplicate
-// requests when React Strict Mode runs effects twice in development and on
-// remounts; failed lookups are evicted so a later visit can retry.
-const detailCache = new Map<
-  string,
-  Promise<{ alert: OfficialAlert | null; error: string | null }>
->();
-
-function fetchAlertDetail(
-  id: string
-): Promise<{ alert: OfficialAlert | null; error: string | null }> {
-  let entry = detailCache.get(id);
-  if (!entry) {
-    entry = (async () => {
-      try {
-        const res = await fetch(`/api/alerts/${id}`);
-        if (res.status === 404) {
-          return { alert: null, error: 'Alerta não encontrado' };
-        }
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        return { alert: json.data as OfficialAlert, error: null };
-      } catch (err) {
-        return {
-          alert: null,
-          error:
-            err instanceof Error ? err.message : 'Erro ao buscar alerta',
-        };
-      }
-    })();
-    detailCache.set(id, entry);
-    void entry.then((result) => {
-      if (result.error) detailCache.delete(id);
-    });
-  }
-  return entry;
+async function fetchAlertsJson(): Promise<{
+  data: Alert[];
+  meta: AlertsPageMeta;
+}> {
+  const res = await fetch('/api/v1/alerts?pageSize=100');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
 }
 
-export function useOfficialAlerts(): UseOfficialAlertsReturn {
-  const [alerts, setAlerts] = useState<OfficialAlert[]>([]);
-  const [meta, setMeta] = useState<AlertsResponse['meta'] | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+export function useOfficialAlerts(): UseAlertsResult {
+  const query = useQuery({
+    queryKey: ['v1', 'alerts'],
+    queryFn: fetchAlertsJson,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+  });
 
-  // All state updates happen strictly after the first await so that no
-  // setState runs synchronously inside the effect body
-  // (react-hooks/set-state-in-effect).
-  const loadAlerts = useCallback(async (signal?: AbortSignal) => {
-    try {
-      const res = await fetch('/api/alerts', { signal });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-
-      const json: AlertsResponse = await res.json();
-      setAlerts(json.data);
-      setMeta(json.meta);
-      setError(null);
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return;
-      setError(
-        err instanceof Error ? err.message : 'Erro ao buscar alertas'
-      );
-    } finally {
-      setLoading(false);
-    }
-  }, []);
-
-  useEffect(() => {
-    const controller = new AbortController();
-    // Deferred to a microtask so no state update runs synchronously inside
-    // the effect body (react-hooks/set-state-in-effect).
-    queueMicrotask(() => void loadAlerts(controller.signal));
-
-    // Refresh every 2 minutes
-    const interval = setInterval(() => void loadAlerts(), 120_000);
-    return () => {
-      controller.abort();
-      clearInterval(interval);
-    };
-  }, [loadAlerts]);
-
-  const refetch = useCallback(() => {
-    setLoading(true);
-    setError(null);
-    void loadAlerts();
-  }, [loadAlerts]);
-
-  return { alerts, meta, loading, error, refetch };
+  return {
+    alerts: query.data?.data ?? [],
+    meta: query.data?.meta ?? null,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+    refetch: () => void query.refetch(),
+  };
 }
 
 export function useOfficialAlert(id: string | null) {
-  const [alert, setAlert] = useState<OfficialAlert | null>(null);
-  // If the detail is already cached (Strict Mode double-mount, back-forward
-  // navigation) we can render immediately without a loading flash.
-  const [loading, setLoading] = useState(() =>
-    id ? !detailCache.has(id) : false
-  );
-  const [error, setError] = useState<string | null>(null);
+  const query = useQuery({
+    queryKey: ['v1', 'alerts', id],
+    queryFn: async (): Promise<Alert> => {
+      const res = await fetch(`/api/v1/alerts/${id}`);
+      if (res.status === 404) {
+        throw new Error('Alerta não encontrado');
+      }
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const json = await res.json();
+      return json.data as Alert;
+    },
+    enabled: Boolean(id),
+    staleTime: 60_000,
+    retry: (failureCount, error) =>
+      // 404 is a definitive answer — never retry it.
+      !(error instanceof Error && error.message === 'Alerta não encontrado') &&
+      failureCount < 1,
+  });
 
-  useEffect(() => {
-    if (!id) return;
-
-    let active = true;
-    void fetchAlertDetail(id).then((result) => {
-      if (!active) return;
-      setAlert(result.alert);
-      setError(result.error);
-      setLoading(false);
-    });
-
-    return () => {
-      active = false;
-    };
-  }, [id]);
-
-  return { alert, loading, error };
+  return {
+    alert: query.data ?? null,
+    loading: query.isLoading,
+    error:
+      query.error instanceof Error
+        ? query.error.message
+        : query.isError
+          ? 'Erro ao buscar alerta'
+          : null,
+  };
 }
+
+async function fetchSourcesStatus(): Promise<{ data: SourceHealth[] }> {
+  const res = await fetch('/api/v1/sources/status');
+  if (!res.ok) throw new Error(`HTTP ${res.status}`);
+  return res.json();
+}
+
+export function useSourcesStatus() {
+  const query = useQuery({
+    queryKey: ['v1', 'sources', 'status'],
+    queryFn: fetchSourcesStatus,
+    staleTime: 30_000,
+    refetchInterval: 60_000,
+  });
+
+  return {
+    health: query.data?.data?.[0] ?? null,
+    loading: query.isLoading,
+    error: query.error instanceof Error ? query.error.message : null,
+  };
+}
+
+export type { AlertSeverity };

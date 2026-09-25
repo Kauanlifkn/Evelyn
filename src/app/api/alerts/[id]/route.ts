@@ -1,38 +1,38 @@
 /**
- * GET /api/alerts/[id]
- *
- * Returns a single alert by ID from the configured provider.
+ * GET /api/alerts/[id] (LEGACY — kept for compatibility, RECOVERY-2).
+ * Delegates to AlertService; preserves the legacy 404 JSON shape.
  */
 
-import { NextResponse } from 'next/server';
-import { getAlertProvider } from '@/server/providers/alerts';
+import { AppError } from '@/server/shared/errors/app-error';
+import { getServices } from '@/server/infrastructure/composition';
+import { withRoute } from '@/server/infrastructure/http/route';
+import { SEVERITY_TO_LEGACY } from '@/server/infrastructure/providers/alerts/legacy-mapping';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
-export async function GET(
-  _request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id } = await params;
-    const provider = getAlertProvider();
-    const alerts = await provider.fetchActiveAlerts();
-    const alert = alerts.find((a) => a.id === id);
-
-    if (!alert) {
-      return NextResponse.json(
-        { error: 'Alert not found', id },
-        { status: 404 }
-      );
+export const GET = withRoute(
+  '/api/alerts/[id]',
+  async (_request, { params }) => {
+    const { alertService } = getServices();
+    try {
+      const alert = await alertService.getById(params.id ?? '');
+      return Response.json({
+        data: {
+          ...alert,
+          severity:
+            SEVERITY_TO_LEGACY[alert.severity] ?? SEVERITY_TO_LEGACY[0],
+          status: alert.status === 'closed' ? 'expired' : 'active',
+        },
+      });
+    } catch (error) {
+      if (error instanceof AppError && error.code === 'NOT_FOUND') {
+        // Legacy error shape preserved on purpose.
+        return Response.json(
+          { error: 'Alert not found', id: params.id ?? '' },
+          { status: 404 }
+        );
+      }
+      throw error;
     }
-
-    return NextResponse.json({ data: alert });
-  } catch (error) {
-    console.error('[/api/alerts/[id]] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
   }
-}
+);

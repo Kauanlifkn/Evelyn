@@ -16,19 +16,20 @@ import { Modal } from '@/components/ui/Modal';
 import { OfficialBadge } from './OfficialBadge';
 import {
   formatDate,
-  getOfficialSeverityLabel,
-  getOfficialSeverityNumber,
+  getSeverityLabel,
   getOfficialEventTypeLabel,
   getSourceLabel,
+  getStatusBadgeSeverity,
+  getStatusLabel,
 } from '@/lib/utils';
-import type { OfficialAlert } from '@/server/providers/alerts/types';
+import type { Alert } from '@/server/domain/alerts/alert.contract';
 
 interface OfficialAlertDetailProps {
-  alert: OfficialAlert;
+  alert: Alert;
 }
 
-// localStorage key for local-only "I am safe" confirmations (RECOVERY-1:
-// stored on this device only, never transmitted).
+// localStorage key for local-only "I am safe" confirmations (stored on
+// this device only, never transmitted).
 const SAFE_CONFIRMATIONS_KEY = 'hidro-alerta-safe-confirmations';
 
 type ShareStatus = 'idle' | 'copied' | 'error' | 'unavailable';
@@ -40,9 +41,12 @@ const EMERGENCY_NUMBERS = [
   { phone: '190', label: 'Polícia Militar' },
 ];
 
+/**
+ * Alert detail for the domain contract (RECOVERY-2 — numeric severity,
+ * doc §5 statuses). Renders official (INMET) and simulated alerts.
+ */
 export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
-  const severityNum = getOfficialSeverityNumber(alert.severity);
-  const isCritical = alert.severity === 'extreme' || alert.severity === 'danger';
+  const isCritical = alert.severity >= 2;
 
   const [shareStatus, setShareStatus] = useState<ShareStatus>('idle');
   const [safeConfirmed, setSafeConfirmed] = useState(false);
@@ -106,38 +110,54 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
       {/* Critical alert banner */}
       {isCritical && (
         <div className="bg-hydro-gradient-emergency text-white text-sm px-5 py-4 rounded-2xl flex items-center gap-3 shadow-hydro">
-          <AlertTriangle className="h-5 w-5 shrink-0" />
+          <AlertTriangle className="h-5 w-5 shrink-0" aria-hidden="true" />
           <div>
-            <p className="font-bold">ALERTA CRÍTICO</p>
+            <p className="font-bold">
+              {alert.isOfficial ? 'ALERTA CRÍTICO' : 'ALERTA CRÍTICO (SIMULADO)'}
+            </p>
             <p className="text-white/90 text-xs mt-0.5">
-              Este alerta requer atenção imediata. Fonte oficial.
+              {alert.isOfficial
+                ? 'Este alerta requer atenção imediata. Fonte oficial.'
+                : 'Este alerta é simulado — ambiente de demonstração.'}
             </p>
           </div>
         </div>
       )}
 
-      {/* Official alert notice */}
-      <div className="bg-hydro-safe-soft text-hydro-safe-dark text-sm px-4 py-3 rounded-xl flex items-center gap-2">
-        <AlertTriangle className="h-4 w-4 shrink-0" />
-        <span className="font-medium">ALERTA OFICIAL</span>
-        <span className="text-hydro-text-secondary">—</span>
-        <span className="text-hydro-text-secondary">
-          Fonte: {getSourceLabel(alert.source)}
-        </span>
-      </div>
+      {/* Source notice */}
+      {alert.isOfficial ? (
+        <div className="bg-hydro-safe-soft text-hydro-safe-dark text-sm px-4 py-3 rounded-xl flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="font-medium">ALERTA OFICIAL</span>
+          <span className="text-hydro-text-secondary" aria-hidden="true">—</span>
+          <span className="text-hydro-text-secondary">
+            Fonte: {getSourceLabel(alert.source)}
+          </span>
+        </div>
+      ) : (
+        <div className="bg-hydro-warning-soft text-hydro-warning-dark text-sm px-4 py-3 rounded-xl flex items-center gap-2">
+          <AlertTriangle className="h-4 w-4 shrink-0" aria-hidden="true" />
+          <span className="font-medium">DADOS SIMULADOS</span>
+          <span className="text-hydro-text-secondary" aria-hidden="true">—</span>
+          <span className="text-hydro-text-secondary">
+            este alerta não é real (fonte: {getSourceLabel(alert.source)})
+          </span>
+        </div>
+      )}
 
       {/* Title and badges */}
       <div>
         <div className="flex flex-wrap items-center gap-2 mb-3">
-          <Badge severity={severityNum} className="text-sm px-3 py-1">
+          <Badge severity={alert.severity} className="text-sm px-3 py-1">
             {getOfficialEventTypeLabel(alert.eventType)}
           </Badge>
-          <Badge severity={alert.status === 'active' ? 2 : 0} className="text-sm px-3 py-1">
-            {alert.status === 'active' ? 'Ativo' : 'Expirado'}
+          <Badge
+            severity={getStatusBadgeSeverity(alert.status)}
+            className="text-sm px-3 py-1"
+          >
+            {getStatusLabel(alert.status)}
           </Badge>
-          {alert.isOfficial && (
-            <OfficialBadge source={alert.source} size="md" />
-          )}
+          {alert.isOfficial && <OfficialBadge source={alert.source} size="md" />}
         </div>
         <h1 className="text-xl font-bold text-hydro-text">{alert.title}</h1>
       </div>
@@ -164,7 +184,9 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
             </div>
             <div>
               <p className="text-xs text-hydro-text-secondary uppercase tracking-wide mb-1 font-medium">Severidade</p>
-              <p className="text-sm font-medium text-hydro-text">{getOfficialSeverityLabel(alert.severity)}</p>
+              <p className="text-sm font-medium text-hydro-text">
+                {getSeverityLabel(alert.severity)}
+              </p>
               <p className="text-xs text-hydro-text-secondary">Original: {alert.originalSeverity}</p>
             </div>
           </div>
@@ -174,15 +196,15 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
           <div className="space-y-3">
             <div>
               <p className="text-xs text-hydro-text-secondary uppercase tracking-wide mb-1 font-medium">Status</p>
-              <Badge severity={alert.status === 'active' ? 2 : 0}>
-                {alert.status === 'active' ? 'Ativo' : 'Expirado'}
+              <Badge severity={getStatusBadgeSeverity(alert.status)}>
+                {getStatusLabel(alert.status)}
               </Badge>
             </div>
             {alert.effectiveAt && (
               <div>
                 <p className="text-xs text-hydro-text-secondary uppercase tracking-wide mb-1 font-medium">Válido desde</p>
                 <p className="text-sm font-medium text-hydro-text flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                   {formatDate(alert.effectiveAt)}
                 </p>
               </div>
@@ -191,7 +213,7 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
               <div>
                 <p className="text-xs text-hydro-text-secondary uppercase tracking-wide mb-1 font-medium">Válido até</p>
                 <p className="text-sm font-medium text-hydro-text flex items-center gap-1">
-                  <Clock className="h-3.5 w-3.5" />
+                  <Clock className="h-3.5 w-3.5" aria-hidden="true" />
                   {formatDate(alert.expiresAt)}
                 </p>
               </div>
@@ -200,7 +222,15 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
         </Card>
       </div>
 
-      {/* No instructions section - INMET doesn't provide them */}
+      {/* Instructions (when the source provides them) */}
+      {alert.instruction && (
+        <Card>
+          <h2 className="text-xs text-hydro-text-secondary uppercase tracking-wide mb-2 font-medium">
+            Orientações da fonte
+          </h2>
+          <p className="text-sm text-hydro-text-secondary leading-relaxed">{alert.instruction}</p>
+        </Card>
+      )}
 
       {/* Affected areas */}
       {alert.areas.length > 0 && (
@@ -211,7 +241,9 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
           <Card>
             <p className="text-xs text-hydro-text-secondary mb-3">
               {alert.areas.length} {alert.areas.length === 1 ? 'região' : 'regiões'} afetada{alert.areas.length === 1 ? '' : 's'}.
-              Coordenadas geográficas não fornecidas pela fonte.
+              {alert.isOfficial
+                ? ' Coordenadas geográficas não fornecidas pela fonte.'
+                : ''}
             </p>
             <div className="flex flex-wrap gap-2">
               {alert.areas.map((area, i) => (
@@ -230,24 +262,26 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
       {/* Citizen actions */}
       <div className="flex flex-wrap gap-3 pt-2 border-t border-hydro-border">
         <Button variant="outline" onClick={handleSafeConfirm}>
-          <CheckCircle className="h-4 w-4" />
+          <CheckCircle className="h-4 w-4" aria-hidden="true" />
           {safeConfirmed ? 'Segurança registrada (LOCAL)' : 'Estou seguro'}
         </Button>
         <Button variant="danger" onClick={() => setHelpOpen(true)}>
-          <AlertTriangle className="h-4 w-4" />
+          <AlertTriangle className="h-4 w-4" aria-hidden="true" />
           Preciso de ajuda
         </Button>
         <Button variant="outline" onClick={handleShare}>
-          <Share2 className="h-4 w-4" />
+          <Share2 className="h-4 w-4" aria-hidden="true" />
           Compartilhar
         </Button>
-        <Button
-          variant="outline"
-          onClick={() => { window.open(alert.sourceUrl, '_blank', 'noopener'); }}
-        >
-          <ExternalLink className="h-4 w-4" />
-          Ver na fonte
-        </Button>
+        {alert.sourceUrl && (
+          <Button
+            variant="outline"
+            onClick={() => { window.open(alert.sourceUrl, '_blank', 'noopener'); }}
+          >
+            <ExternalLink className="h-4 w-4" aria-hidden="true" />
+            Ver na fonte
+          </Button>
+        )}
       </div>
 
       {/* Honest action feedback (live region) */}
@@ -297,15 +331,18 @@ export function OfficialAlertDetail({ alert }: OfficialAlertDetailProps) {
             ))}
           </ul>
           <p className="text-xs text-hydro-text-secondary">
-            Se houver risco à vida, não aguarde: ligue imediatamente. Este
-            aviso é da fonte oficial {getSourceLabel(alert.source)}.
+            Se houver risco à vida, não aguarde: ligue imediatamente.
+            {alert.isOfficial
+              ? ` Este aviso é da fonte oficial ${getSourceLabel(alert.source)}.`
+              : ' Este alerta é simulado (ambiente de demonstração).'}
           </p>
         </div>
       </Modal>
 
       {/* Source footer */}
       <div className="text-center text-xs text-hydro-text-secondary pb-4">
-        Alerta oficial — {getSourceLabel(alert.source)}
+        {alert.isOfficial ? 'Alerta oficial' : 'Alerta simulado'} —{' '}
+        {getSourceLabel(alert.source)}
         {alert.fetchedAt && (
           <span>
             {' '}· Sincronizado em{' '}

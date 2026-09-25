@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { OfficialAlertDetail } from '@/components/alerts/OfficialAlertDetail';
-import type { OfficialAlert } from '@/server/providers/alerts/types';
+import type { Alert } from '@/server/domain/alerts/alert.contract';
 
-const baseAlert: OfficialAlert = {
+const baseAlert: Alert = {
   id: 'inmet-54415',
   source: 'INMET',
   sourceType: 'OFFICIAL_WEATHER',
@@ -11,9 +11,10 @@ const baseAlert: OfficialAlert = {
   title: 'Aviso de Chuvas Intensas',
   description: 'Chuva entre 30 e 60 mm/h.',
   eventType: 'heavy_rain',
-  severity: 'danger',
+  severity: 2,
   originalSeverity: 'Perigo',
   status: 'active',
+  origin: 'OFFICIAL',
   issuedAt: '2026-05-17T09:00:00.000Z',
   effectiveAt: '2026-05-17T09:00:00.000Z',
   expiresAt: '2099-12-31T23:59:00.000Z',
@@ -22,6 +23,8 @@ const baseAlert: OfficialAlert = {
   isSimulated: false,
   sourceUrl: 'https://apiprevmet3.inmet.gov.br/avisos/rss/54415',
   fetchedAt: '2026-09-24T20:00:00.000Z',
+  createdAt: '2026-05-17T09:00:00.000Z',
+  updatedAt: '2026-09-24T20:00:00.000Z',
 };
 
 describe('OfficialAlertDetail citizen actions', () => {

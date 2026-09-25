@@ -20,16 +20,24 @@ import {
   getShelterStatusColor,
   telHref,
 } from '@/lib/utils';
-import type { Shelter } from '@/types/shelter';
+import type { Shelter } from '@/server/domain/shelters/shelter.contract';
 
 interface ShelterCardProps {
   shelter: Shelter;
 }
 
+/**
+ * Shelter card for the domain contract (RECOVERY-2):
+ * estimatedVacancies / accessibility / foodAvailable / medicalSupport /
+ * phone / distanceKm? / lastUpdatedAt. Data is simulated (isSimulated).
+ */
 export function ShelterCard({ shelter }: ShelterCardProps) {
   const statusColor = getShelterStatusColor(shelter.status);
-  const occupancyPercent = Math.round((shelter.occupied / shelter.capacity) * 100);
-  const phoneHref = shelter.contact ? telHref(shelter.contact) : null;
+  const occupied = Math.max(0, shelter.capacity - shelter.estimatedVacancies);
+  const occupancyPercent = shelter.capacity
+    ? Math.round((occupied / shelter.capacity) * 100)
+    : 0;
+  const phoneHref = shelter.phone ? telHref(shelter.phone) : null;
 
   return (
     <Card>
@@ -58,24 +66,26 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
 
         {/* Info row */}
         <div className="flex flex-wrap items-center gap-3 text-xs text-hydro-text-secondary">
-          <span className="flex items-center gap-1">
-            <Navigation className="h-3 w-3" aria-hidden="true" />
-            {formatDistance(shelter.distance)}
-          </span>
-          {shelter.contact ? (
+          {shelter.distanceKm !== undefined && (
+            <span className="flex items-center gap-1">
+              <Navigation className="h-3 w-3" aria-hidden="true" />
+              {formatDistance(shelter.distanceKm)}
+            </span>
+          )}
+          {shelter.phone ? (
             phoneHref ? (
               <a
                 href={phoneHref}
                 className="flex items-center gap-1 font-medium text-hydro-blue-700 hover:text-hydro-blue-600 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-hydro-cyan-500 rounded"
-                aria-label={`Ligar para ${shelter.name}: ${shelter.contact}`}
+                aria-label={`Ligar para ${shelter.name}: ${shelter.phone}`}
               >
                 <Phone className="h-3 w-3" aria-hidden="true" />
-                {shelter.contact}
+                {shelter.phone}
               </a>
             ) : (
               <span className="flex items-center gap-1">
                 <Phone className="h-3 w-3" aria-hidden="true" />
-                {shelter.contact}
+                {shelter.phone}
               </span>
             )
           ) : (
@@ -91,7 +101,7 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
               Ocupação
             </span>
             <span className="font-medium text-hydro-text">
-              {shelter.occupied}/{shelter.capacity} ({occupancyPercent}%)
+              {occupied}/{shelter.capacity} ({occupancyPercent}%)
             </span>
           </div>
           <div className="h-2.5 bg-hydro-surface-blue rounded-full overflow-hidden">
@@ -101,20 +111,20 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
                 occupancyPercent >= 90
                   ? 'bg-hydro-danger'
                   : occupancyPercent >= 70
-                  ? 'bg-hydro-warning'
-                  : 'bg-hydro-safe'
+                    ? 'bg-hydro-warning'
+                    : 'bg-hydro-safe'
               )}
               style={{ width: `${occupancyPercent}%` }}
             />
           </div>
           <p className="text-xs text-hydro-text-secondary mt-1">
-            {shelter.availableSpots} vagas disponíveis
+            {shelter.estimatedVacancies} vagas disponíveis
           </p>
         </div>
 
         {/* Features */}
         <div className="flex flex-wrap gap-2">
-          {shelter.accessible && (
+          {shelter.accessibility && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-hydro-surface-blue px-2.5 py-1 text-[10px] text-hydro-text-secondary">
               <Accessibility className="h-3 w-3" aria-hidden="true" />
               Acessível
@@ -126,13 +136,13 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
               Animais
             </span>
           )}
-          {shelter.hasFood && (
+          {shelter.foodAvailable && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-hydro-surface-blue px-2.5 py-1 text-[10px] text-hydro-text-secondary">
               <Utensils className="h-3 w-3" aria-hidden="true" />
               Alimentação
             </span>
           )}
-          {shelter.hasMedical && (
+          {shelter.medicalSupport && (
             <span className="inline-flex items-center gap-1 rounded-lg bg-hydro-surface-blue px-2.5 py-1 text-[10px] text-hydro-text-secondary">
               <Stethoscope className="h-3 w-3" aria-hidden="true" />
               Médico
@@ -142,7 +152,7 @@ export function ShelterCard({ shelter }: ShelterCardProps) {
 
         {/* Last update */}
         <p className="text-[11px] text-hydro-text-secondary">
-          Última atualização: {formatDate(shelter.lastUpdate)} — dado simulado
+          Última atualização: {formatDate(shelter.lastUpdatedAt)} — dado simulado
         </p>
 
         {/* Action buttons */}

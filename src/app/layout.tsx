@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { DemoBanner } from '@/components/layout/DemoBanner';
+import { AppProviders } from './providers';
 
 export const metadata: Metadata = {
   title: 'Hidro Alerta — Informação certa salva vidas',
@@ -18,14 +19,16 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" className="h-full antialiased">
       <body className="min-h-full flex flex-col">
-        <a
-          href="#conteudo-principal"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-hydro-blue-700 focus:shadow-hydro-lg"
-        >
-          Pular para o conteúdo principal
-        </a>
-        <DemoBanner mode={dataMode} />
-        {children}
+        <AppProviders>
+          <a
+            href="#conteudo-principal"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[60] focus:rounded-lg focus:bg-white focus:px-4 focus:py-2 focus:text-sm focus:font-semibold focus:text-hydro-blue-700 focus:shadow-hydro-lg"
+          >
+            Pular para o conteúdo principal
+          </a>
+          <DemoBanner mode={dataMode} />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

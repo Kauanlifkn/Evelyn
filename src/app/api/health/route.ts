@@ -1,42 +1,31 @@
 /**
- * GET /api/health
- *
- * Simple health check endpoint.
+ * GET /api/health (LEGACY — kept for compatibility, RECOVERY-2).
+ * Delegates to SourceService; passive semantics preserved (this endpoint
+ * does NOT trigger a provider fetch — warm /api/alerts first). The new
+ * split endpoints are /api/v1/health/live and /api/v1/health/ready.
  */
 
-import { NextResponse } from 'next/server';
-import { getAlertProvider, getAlertDataMode } from '@/server/providers/alerts';
+import { getServices, getDataMode } from '@/server/infrastructure/composition';
+import { withRoute } from '@/server/infrastructure/http/route';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
-export async function GET() {
-  try {
-    const provider = getAlertProvider();
-    const health = provider.getSourceHealth();
+export const GET = withRoute('/api/health', async () => {
+  const { sourceService } = getServices();
+  const health = sourceService.getHealth();
 
-    const isHealthy = health.status === 'ONLINE' || health.status === 'STALE';
+  const isHealthy = health.status === 'ONLINE' || health.status === 'STALE';
 
-    return NextResponse.json(
-      {
-        status: isHealthy ? 'healthy' : 'degraded',
-        source: health.source,
-        sourceStatus: health.status,
-        latencyMs: health.latencyMs,
-        lastSuccessAt: health.lastSuccessAt,
-        dataMode: getAlertDataMode(),
-        timestamp: new Date().toISOString(),
-      },
-      { status: isHealthy ? 200 : 503 }
-    );
-  } catch {
-    return NextResponse.json(
-      {
-        status: 'unhealthy',
-        error: 'Internal server error',
-        timestamp: new Date().toISOString(),
-      },
-      { status: 500 }
-    );
-  }
-}
+  return Response.json(
+    {
+      status: isHealthy ? 'healthy' : 'degraded',
+      source: health.id,
+      sourceStatus: health.status,
+      latencyMs: health.latencyMs,
+      lastSuccessAt: health.lastSuccessAt,
+      dataMode: getDataMode(),
+      timestamp: new Date().toISOString(),
+    },
+    { status: isHealthy ? 200 : 503 }
+  );
+});

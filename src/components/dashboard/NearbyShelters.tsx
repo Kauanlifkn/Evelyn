@@ -9,7 +9,7 @@ import {
   getShelterStatusLabel,
   getShelterStatusColor,
 } from '@/lib/utils';
-import type { Shelter } from '@/types/shelter';
+import type { Shelter } from '@/server/domain/shelters/shelter.contract';
 
 interface NearbySheltersProps {
   shelters: Shelter[];
@@ -37,7 +37,7 @@ export function NearbyShelters({ shelters }: NearbySheltersProps) {
             <Card className="mb-2 group">
               <div className="flex items-start gap-3">
                 <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-hydro-safe-soft shrink-0">
-                  <ShieldPlus className="h-4 w-4 text-hydro-safe" />
+                  <ShieldPlus className="h-4 w-4 text-hydro-safe" aria-hidden="true" />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2 mb-0.5">
@@ -55,19 +55,20 @@ export function NearbyShelters({ shelters }: NearbySheltersProps) {
                     </span>
                   </div>
                   <div className="flex items-center gap-3 text-xs text-hydro-text-secondary">
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3 w-3" />
-                      {formatDistance(shelter.distance)}
-                    </span>
-                    <span>
-                      {shelter.availableSpots} vagas
-                    </span>
-                    <span>
-                      Capacidade: {shelter.capacity}
-                    </span>
+                    {shelter.distanceKm !== undefined && (
+                      <span className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" aria-hidden="true" />
+                        {formatDistance(shelter.distanceKm)}
+                      </span>
+                    )}
+                    <span>{shelter.estimatedVacancies} vagas</span>
+                    <span>Capacidade: {shelter.capacity}</span>
                   </div>
                 </div>
-                <ChevronRight className="h-4 w-4 text-hydro-text-muted shrink-0 mt-1 group-hover:text-hydro-blue-500 transition-colors" />
+                <ChevronRight
+                  className="h-4 w-4 text-hydro-text-muted shrink-0 mt-1 group-hover:text-hydro-blue-500 transition-colors"
+                  aria-hidden="true"
+                />
               </div>
             </Card>
           </Link>

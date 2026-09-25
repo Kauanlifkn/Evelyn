@@ -10,27 +10,38 @@ import { ActiveSheltersCard } from '@/components/dashboard/ActiveSheltersCard';
 import { NearbyShelters } from '@/components/dashboard/NearbyShelters';
 import { LastUpdate } from '@/components/dashboard/LastUpdate';
 import { OfficialAlertCard } from '@/components/alerts/OfficialAlertCard';
-import { AlertCard } from '@/components/alerts/AlertCard';
 import { SourceStatus } from '@/components/alerts/SourceStatus';
 import { useOfficialAlerts } from '@/hooks/useOfficialAlerts';
-import { mockAlerts } from '@/data/mocks/alerts';
-import { mockShelters } from '@/data/mocks/shelters';
+import { useShelters } from '@/hooks/useShelters';
 import { mockRivers } from '@/data/mocks/rivers';
 import { mockWeatherForecast } from '@/data/mocks/weather';
 import { ShieldCheck } from 'lucide-react';
 import Link from 'next/link';
 
+/**
+ * Dashboard (RECOVERY-2): alerts and shelters come from the API
+ * (/api/v1/alerts, /api/v1/shelters). Rivers/weather remain simulated in
+ * the frontend until RECOVERY-4 connects CEMADEN/ANA/CPTEC — clearly
+ * labeled as simulated.
+ */
 export default function DashboardPage() {
   const mainRiver = mockRivers[0];
   const todayForecast = mockWeatherForecast[0];
-  const activeShelters = mockShelters.filter(
-    (s) => s.status === 'open' || s.status === 'crowded'
-  );
-  const { alerts: officialAlerts, meta, loading } = useOfficialAlerts();
+
+  const { alerts, meta, loading, error, refetch } = useOfficialAlerts();
+  const {
+    shelters,
+    loading: sheltersLoading,
+    error: sheltersError,
+    refetch: refetchShelters,
+  } = useShelters();
 
   const isMockMode = meta?.dataMode === 'mock';
   const hasOfficial = meta?.isOfficial && meta.sourceStatus !== 'OFFLINE';
-  const activeOfficialAlerts = officialAlerts.filter((a) => a.status === 'active');
+  const activeAlerts = alerts.filter((a) => a.status === 'active');
+  const activeShelters = shelters.filter(
+    (s) => s.status === 'open' || s.status === 'crowded'
+  );
 
   return (
     <AppShell>
@@ -46,16 +57,16 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* Official Alerts Section */}
+        {/* Official alerts section */}
         {hasOfficial && (
           <div>
             <div className="flex items-center gap-2 mb-3">
-              <ShieldCheck className="h-5 w-5 text-hydro-safe" />
+              <ShieldCheck className="h-5 w-5 text-hydro-safe" aria-hidden="true" />
               <h2 className="text-lg font-semibold text-hydro-text">
                 Alertas Oficiais
               </h2>
               <span className="inline-flex items-center rounded-md bg-hydro-safe-soft text-hydro-safe-dark px-2 py-0.5 text-xs font-bold">
-                {activeOfficialAlerts.length} ativo{activeOfficialAlerts.length !== 1 ? 's' : ''}
+                {activeAlerts.length} ativo{activeAlerts.length !== 1 ? 's' : ''}
               </span>
             </div>
             {loading ? (
@@ -64,7 +75,22 @@ export default function DashboardPage() {
                   Carregando alertas oficiais...
                 </p>
               </Card>
-            ) : activeOfficialAlerts.length === 0 ? (
+            ) : error ? (
+              <Card>
+                <div className="text-center py-4 space-y-3">
+                  <p className="text-sm text-hydro-text">
+                    Erro ao consultar alertas oficiais. Isso{' '}
+                    <strong>não significa ausência de risco</strong>.
+                  </p>
+                  <button
+                    onClick={refetch}
+                    className="inline-flex items-center justify-center rounded-lg bg-hydro-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-hydro-blue-800 transition-colors"
+                  >
+                    Tentar novamente
+                  </button>
+                </div>
+              </Card>
+            ) : activeAlerts.length === 0 ? (
               <Card>
                 <p className="text-sm text-hydro-text-secondary text-center py-4">
                   Nenhum alerta oficial ativo no momento.
@@ -72,26 +98,28 @@ export default function DashboardPage() {
               </Card>
             ) : (
               <div className="space-y-2">
-                {activeOfficialAlerts.slice(0, 5).map((alert) => (
+                {activeAlerts.slice(0, 5).map((alert) => (
                   <OfficialAlertCard key={alert.id} alert={alert} />
                 ))}
-                {activeOfficialAlerts.length > 5 && (
+                {activeAlerts.length > 5 && (
                   <Link
                     href="/alertas"
                     className="block text-center text-sm text-hydro-blue-600 hover:text-hydro-blue-700 font-medium py-2 transition-colors"
                   >
-                    Ver todos os {activeOfficialAlerts.length} alertas →
+                    Ver todos os {activeAlerts.length} alertas →
                   </Link>
                 )}
               </div>
             )}
-            <p className="text-xs text-hydro-text-secondary mt-2">
-              Fonte: {meta!.source} — Instituto Nacional de Meteorologia
-            </p>
+            {meta && (
+              <p className="text-xs text-hydro-text-secondary mt-2">
+                Fonte: {meta.source} — Instituto Nacional de Meteorologia
+              </p>
+            )}
           </div>
         )}
 
-        {/* Mock mode: show simulated alerts honestly labeled */}
+        {/* Mock mode: simulated alerts, honestly labeled */}
         {!hasOfficial && !loading && isMockMode && (
           <div>
             <div className="flex items-center gap-2 mb-3">
@@ -100,11 +128,19 @@ export default function DashboardPage() {
                 SIMULADO
               </span>
             </div>
-            <div className="space-y-2">
-              {mockAlerts.slice(0, 3).map((alert) => (
-                <AlertCard key={alert.id} alert={alert} />
-              ))}
-            </div>
+            {error ? (
+              <Card>
+                <p className="text-sm text-hydro-text-secondary text-center py-4">
+                  Erro ao carregar alertas simulados ({error}).
+                </p>
+              </Card>
+            ) : (
+              <div className="space-y-2">
+                {alerts.slice(0, 3).map((alert) => (
+                  <OfficialAlertCard key={alert.id} alert={alert} />
+                ))}
+              </div>
+            )}
             <p className="text-xs text-hydro-text-secondary mt-2">
               Dados simulados — nenhum alerta desta lista é real. Modo de
               demonstração (ALERT_DATA_MODE=mock).
@@ -170,7 +206,10 @@ export default function DashboardPage() {
             temperatureMax={todayForecast.temperatureMax}
           />
           <RiskPeopleCard count={12450} city="Região Metropolitana" />
-          <ActiveSheltersCard count={activeShelters.length} totalCapacity={1800} />
+          <ActiveSheltersCard
+            count={activeShelters.length}
+            totalCapacity={activeShelters.reduce((sum, s) => sum + s.capacity, 0)}
+          />
         </div>
 
         {/* Simulated data notice for cards */}
@@ -178,7 +217,7 @@ export default function DashboardPage() {
           Nível do rio, previsão de chuva, pessoas em risco e abrigos: dados simulados.
         </p>
 
-        {/* Nearby Shelters */}
+        {/* Nearby Shelters (API-driven) */}
         <div>
           <div className="flex items-center justify-between mb-3">
             <h2 className="text-lg font-semibold text-hydro-text">
@@ -188,7 +227,29 @@ export default function DashboardPage() {
               Simulado
             </span>
           </div>
-          <NearbyShelters shelters={mockShelters} />
+          {sheltersLoading ? (
+            <Card>
+              <p className="text-sm text-hydro-text-secondary text-center py-4">
+                Carregando abrigos...
+              </p>
+            </Card>
+          ) : sheltersError ? (
+            <Card>
+              <div className="text-center py-4 space-y-3">
+                <p className="text-sm text-hydro-text-secondary">
+                  Não foi possível carregar abrigos agora.
+                </p>
+                <button
+                  onClick={refetchShelters}
+                  className="inline-flex items-center justify-center rounded-lg bg-hydro-blue-700 px-4 py-2 text-sm font-medium text-white hover:bg-hydro-blue-800 transition-colors"
+                >
+                  Tentar novamente
+                </button>
+              </div>
+            </Card>
+          ) : (
+            <NearbyShelters shelters={shelters} />
+          )}
         </div>
 
         {/* Last Update */}

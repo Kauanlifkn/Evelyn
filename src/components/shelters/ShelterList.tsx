@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
 import { SearchInput } from '@/components/ui/SearchInput';
 import { Button } from '@/components/ui/Button';
 import { ShelterCard } from '@/components/shelters/ShelterCard';
-import type { Shelter } from '@/types/shelter';
+import type { Shelter } from '@/server/domain/shelters/shelter.contract';
 
 interface ShelterListProps {
   shelters: Shelter[];
@@ -15,18 +15,23 @@ const statusFilters = [
   { value: 'open', label: 'Abertos' },
   { value: 'crowded', label: 'Lotados' },
   { value: 'closed', label: 'Fechados' },
-];
+  { value: 'unknown', label: 'Desconhecido' },
+] as const;
 
+/**
+ * Client-side search/filter over the shelters already fetched from the
+ * API (RECOVERY-2: the page no longer imports mocks — it consumes
+ * /api/v1/shelters via useShelters).
+ */
 export function ShelterList({ shelters }: ShelterListProps) {
   const [search, setSearch] = useState('');
-  const [statusFilter, setStatusFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
 
   const filtered = useMemo(() => {
+    const q = search.toLowerCase();
     return shelters.filter((s) => {
       const matchesSearch =
-        search === '' ||
-        s.name.toLowerCase().includes(search.toLowerCase()) ||
-        s.city.toLowerCase().includes(search.toLowerCase());
+        q === '' || `${s.name} ${s.address}`.toLowerCase().includes(q);
       const matchesStatus =
         statusFilter === 'all' || s.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -39,7 +44,7 @@ export function ShelterList({ shelters }: ShelterListProps) {
       <SearchInput
         value={search}
         onChange={setSearch}
-        placeholder="Buscar por nome ou cidade..."
+        placeholder="Buscar por nome ou endereço..."
         aria-label="Buscar abrigos"
       />
 
@@ -50,6 +55,7 @@ export function ShelterList({ shelters }: ShelterListProps) {
             key={value}
             variant={statusFilter === value ? 'primary' : 'secondary'}
             size="sm"
+            aria-pressed={statusFilter === value}
             onClick={() => setStatusFilter(value)}
           >
             {label}

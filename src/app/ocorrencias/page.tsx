@@ -6,7 +6,10 @@ import { IncidentForm } from '@/components/incidents/IncidentForm';
 import { IncidentSuccess } from '@/components/incidents/IncidentSuccess';
 
 export default function OcorrenciasPage() {
-  const [recordedAt, setRecordedAt] = useState<string | null>(null);
+  const [receipt, setReceipt] = useState<{
+    recordedAt: string;
+    message: string;
+  } | null>(null);
 
   return (
     <AppShell>
@@ -14,17 +17,20 @@ export default function OcorrenciasPage() {
         <div>
           <h1 className="text-2xl font-bold text-hydro-text">Relatar Ocorrência</h1>
           <p className="text-sm text-hydro-text-secondary">
-            Registre uma ocorrência — demonstração local, nenhum envio real
+            Registre uma ocorrência — ambiente de demonstração, nenhum envio a órgãos públicos
           </p>
         </div>
 
-        {recordedAt ? (
+        {receipt ? (
           <IncidentSuccess
-            recordedAt={recordedAt}
-            onReportAnother={() => setRecordedAt(null)}
+            recordedAt={receipt.recordedAt}
+            message={receipt.message}
+            onReportAnother={() => setReceipt(null)}
           />
         ) : (
-          <IncidentForm onSuccess={(at) => setRecordedAt(at)} />
+          <IncidentForm
+            onSuccess={(recordedAt, message) => setReceipt({ recordedAt, message })}
+          />
         )}
       </div>
     </AppShell>

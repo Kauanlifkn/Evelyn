@@ -1,33 +1,18 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import type { SourceHealth } from '@/server/providers/alerts/types';
+import { useSourcesStatus } from '@/hooks/useOfficialAlerts';
 
 interface SourceStatusProps {
   className?: string;
 }
 
+/**
+ * Live health of the alert source (RECOVERY-2 — via TanStack Query on
+ * /api/v1/sources/status). ONLINE / STALE / OFFLINE with latency and last
+ * sync; detail (incl. provider message) in the tooltip. No stack traces.
+ */
 export function SourceStatus({ className = '' }: SourceStatusProps) {
-  const [health, setHealth] = useState<SourceHealth | null>(null);
-
-  useEffect(() => {
-    async function fetchStatus() {
-      try {
-        const res = await fetch('/api/sources/status');
-        if (res.ok) {
-          const data = await res.json();
-          const source = data.sources?.[0];
-          if (source) setHealth(source);
-        }
-      } catch {
-        // Silent fail - status display is non-critical
-      }
-    }
-
-    fetchStatus();
-    const interval = setInterval(fetchStatus, 60_000);
-    return () => clearInterval(interval);
-  }, []);
+  const { health } = useSourcesStatus();
 
   if (!health) return null;
 
@@ -35,25 +20,20 @@ export function SourceStatus({ className = '' }: SourceStatusProps) {
     health.status === 'ONLINE'
       ? 'bg-hydro-safe'
       : health.status === 'STALE'
-      ? 'bg-hydro-warning'
-      : 'bg-hydro-danger';
+        ? 'bg-hydro-warning'
+        : 'bg-hydro-danger';
 
   const statusLabel =
     health.status === 'ONLINE'
       ? 'Online'
       : health.status === 'STALE'
-      ? 'Atualizando...'
-      : 'Fonte temporariamente indisponível';
+        ? 'Atualizando...'
+        : 'Fonte temporariamente indisponível';
 
   const timeLabel =
-    health.status === 'ONLINE'
-      ? 'Última sincronização'
-      : 'Última leitura válida';
+    health.status === 'ONLINE' ? 'Última sincronização' : 'Última leitura válida';
 
-  const timeValue =
-    health.status === 'ONLINE'
-      ? health.lastSuccessAt
-      : health.lastSuccessAt || health.lastAttemptAt;
+  const timeValue = health.lastSuccessAt ?? health.lastAttemptAt;
 
   const formattedTime = timeValue
     ? new Date(timeValue).toLocaleTimeString('pt-BR', {
@@ -79,10 +59,10 @@ export function SourceStatus({ className = '' }: SourceStatusProps) {
     <div
       className={`flex flex-wrap items-center gap-3 text-xs text-hydro-text-secondary ${className}`}
       role="status"
-      aria-label={`Status da fonte ${health.source}: ${statusLabel}`}
+      aria-label={`Status da fonte ${health.name}: ${statusLabel}`}
       title={detail}
     >
-      <span className="font-medium text-hydro-text">{health.source}</span>
+      <span className="font-medium text-hydro-text">{health.id}</span>
       <span className={`h-2 w-2 rounded-full ${statusColor} shrink-0`} />
       <span>{statusLabel}</span>
       {health.latencyMs != null && <span>{health.latencyMs} ms</span>}

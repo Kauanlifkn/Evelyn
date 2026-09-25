@@ -6,10 +6,16 @@ import { Button } from '@/components/ui/Button';
 
 interface IncidentSuccessProps {
   recordedAt: string;
+  /** Server-provided honesty message (from the API meta). */
+  message: string;
   onReportAnother: () => void;
 }
 
-export function IncidentSuccess({ recordedAt, onReportAnother }: IncidentSuccessProps) {
+export function IncidentSuccess({
+  recordedAt,
+  message,
+  onReportAnother,
+}: IncidentSuccessProps) {
   return (
     <Card className="text-center py-8">
       <div className="flex justify-center mb-4">
@@ -18,7 +24,7 @@ export function IncidentSuccess({ recordedAt, onReportAnother }: IncidentSuccess
         </div>
       </div>
       <h2 className="text-lg font-semibold text-hydro-text mb-2">
-        Ocorrência registrada localmente (demonstração)
+        Ocorrência recebida pelo ambiente de demonstração
       </h2>
       <p className="text-sm text-hydro-text-secondary mb-2">
         Registrada em:{' '}
@@ -27,8 +33,12 @@ export function IncidentSuccess({ recordedAt, onReportAnother }: IncidentSuccess
         </span>
       </p>
       <p className="text-sm text-hydro-text-secondary mb-2">
-        Este registro ficou <strong className="text-hydro-text">apenas nesta sessão</strong> (LOCAL) —
-        o envio para a Defesa Civil ainda não está conectado.
+        Protocolo temporário — o armazenamento é{' '}
+        <strong className="text-hydro-text">em memória</strong> e os dados
+        podem se perder ao reiniciar. A persistência real chega na próxima fase.
+      </p>
+      <p className="text-sm mb-2 rounded-xl bg-hydro-surface-blue text-hydro-text-secondary px-4 py-3">
+        {message}
       </p>
       <p className="text-sm mb-6 rounded-xl bg-hydro-warning-soft text-hydro-warning-dark px-4 py-3">
         Em uma emergência real, ligue 192 (SAMU), 193 (Bombeiros) ou 199

@@ -554,3 +554,25 @@ Itens corrigidos na fase RECOVERY-1. Cada linha refere-se a uma seção da matri
 - `OriginFilter` (componente de filtro de origem) e `MapDetailPanel` permanecem não renderizados (código morto listado; remoção/uso exige aprovação).
 - `useMediaQuery`, `useReducedMotion` permanecem sem uso (código morto listado).
 - Eventos do INMET sem tradução específica caem no slug honesto (ex.: futuros tipos novos) — mapa de eventos cresce por fonte na R-4.
+
+---
+
+## Apêndice F — Delta RECOVERY-2 (2026-09-25)
+
+Fase: API e domínio real dentro do Next ([ADR 0005](./ADR/0005-api-domain-inside-next.md)).
+
+| Requisito (doc oficial) | Antes | Agora |
+|---|---|---|
+| §12 Modelo de dados (contratos) | Tipos esparsos | **Contratos Zod completos** em `src/server/domain/` (Alert c/ severidade 0–4 + origens §5, Shelter, Incident/CommunityReport, Sensor/Observation, Territory, DataSource/SourceHealth, Health) |
+| §10.2 Backend NestJS | — | **Decisão documentada** (ADR 0005): modular dentro do Next, extraível; NestJS segue candidato pós-R-3 |
+| §10.2 Validação Zod | Nenhuma | **Todas as entradas** (path/query/body) via Zod; filtros `strict` |
+| §10.2 OpenAPI | — | `/api/openapi.json` (schemas gerados dos Zod) |
+| §11 alert-service / shelter-service / incident-service / source-ingestion / health | Embrião | Services de aplicação com ports (inversão de dependência) |
+| §16 correlation ID / logs | Ausentes | `x-correlation-id` in/out + logger JSON (timestamp, level, event, correlationId, route, durationMs, status; provider: source/latency/attempt) |
+| §14 rate limiting | Ausente | POST `/api/v1/incidents` 5/min (memória — **transicional**, Redis na R-3) |
+| API | 4 rotas legadas | **/api/v1**: alerts(+filtros/paginação), alerts/[id], sources, sources/status, shelters(+[id]), incidents(GET/POST), health/live, health/ready + OpenAPI; **legado delega aos mesmos services** (formato histórico preservado) |
+| §18 Frontend→API→Service→Repo | Frontend importava mocks | **TanStack Query 5** no frontend (alertas, detalhe, abrigos, status de fonte); abrigos via API; estados loading/error/empty/success em tudo |
+| Ocorrências (§6.5/§14) | Sucesso client-side | **POST /api/v1/incidents** (201, id temporário, armazenamento demo em memória; consentimento obrigatório; sem IP/UA/GPS; 429 tratado na UI) |
+| §14 headers de segurança | — | X-Content-Type-Options, Referrer-Policy, Permissions-Policy, CSP (tiles OSM em img-src; map validado por E2E) |
+
+Baseline pós-R-2: lint 0/0 · tsc 0 · **Vitest 200/200** (60 novos: domain, services, repositories, adapters, shared, OpenAPI, contratos HTTP) · build OK · audit 0 critical/0 high.

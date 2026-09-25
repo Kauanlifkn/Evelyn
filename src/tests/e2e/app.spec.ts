@@ -100,12 +100,18 @@ test.describe('Hidro Alerta - E2E', () => {
     await page.getByRole('button', { name: 'Registrar ocorrência' }).click();
     await expect(page.getByText(/É necessário autorizar o uso/)).toBeVisible();
 
-    // With consent, the local registration succeeds.
+    // With consent, the API receives the report (201) and the success
+    // screen states the demo-only, non-authority nature explicitly.
     await page.getByLabel(/Autorizo o uso destas informações/).check();
     await page.getByRole('button', { name: 'Registrar ocorrência' }).click();
-    await expect(page.getByText('registrada localmente')).toBeVisible();
     await expect(
-      page.getByText(/não é enviado à Defesa Civil|ainda não está conectado/i)
+      page.getByText('recebida pelo ambiente de demonstração')
+    ).toBeVisible();
+    await expect(
+      page.getByText(/Não enviado à Defesa Civil/)
+    ).toBeVisible();
+    await expect(
+      page.getByText(/armazenamento é?\s*em memória/i)
     ).toBeVisible();
   });
 

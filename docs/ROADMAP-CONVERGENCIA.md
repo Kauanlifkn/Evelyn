@@ -102,6 +102,8 @@ Nenhuma (fase sem banco).
 
 ## RECOVERY-2 — API/domínio real
 
+> **STATUS (2026-09-25): EXECUTADA — aguardando revisão humana.** Entregues: camadas domain/application/infrastructure/shared ([ADR 0005](./ADR/0005-api-domain-inside-next.md)), Zod em todas as entradas, `/api/v1` completa + OpenAPI (`/api/openapi.json`), correlation ID, erros padronizados, rate limit transicional (5/min em POST incidents; memória — Redis na R-3), liveness/readiness, logs estruturados, headers de segurança, TanStack Query no frontend (alertas/detalhe/abrigos/source status), ocorrências via POST com consentimento + honestidade mantida, legado delegando aos mesmos services. Baseline: lint 0/0 · tsc 0 · Vitest 200/200 · build OK · E2E 83/83 · audit 0 critical/0 high. **Nenhum commit feito.**
+
 ### Objetivo
 Criar a camada de domínio e API real dentro do app Next (monólito modular, §11 do doc: "No MVP eles poderão existir como módulos de um monólito modular"), com validação, contratos e persistência plugável — **sem** ainda migrar para NestJS nem instalar banco.
 

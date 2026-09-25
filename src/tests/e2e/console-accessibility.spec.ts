@@ -129,11 +129,16 @@ test.describe('Console & Network Hygiene', () => {
     page.on('pageerror', (err) => errors.push(err.message));
 
     await page.goto('/alertas/nonexistent-id');
-    await page.waitForLoadState('networkidle');
+
+    // Wait for the not-found UI directly (networkidle is unreliable with
+    // query retries/dev HMR); the console assertions below then verify
+    // only the expected 404 happened and nothing else.
+    await expect(page.getByText('Alerta não encontrado')).toBeVisible();
+    await page.waitForTimeout(300);
 
     // The browser logs one "Failed to load resource: 404" for the expected
-    // /api/alerts/nonexistent-id request — that network log is inherent to
-    // a correct 404 response and is not a runtime error. Anything else
+    // /api/v1/alerts/nonexistent-id request — that network log is inherent
+    // to a correct 404 response and is not a runtime error. Anything else
     // (JS errors, uncaught exceptions, other resources) must not occur.
     const notFoundLogs = errors.filter(
       (e) => e.includes('Failed to load resource') && e.includes('404')
@@ -141,10 +146,9 @@ test.describe('Console & Network Hygiene', () => {
     const unexpected = errors.filter(
       (e) => !(e.includes('Failed to load resource') && e.includes('404'))
     );
-    // RECOVERY-1: the detail request is de-duplicated — exactly one 404.
+    // TanStack Query de-duplicates: exactly one 404, no retries.
     expect(notFoundLogs).toHaveLength(1);
     expect(unexpected).toHaveLength(0);
-    await expect(page.getByText('Alerta não encontrado')).toBeVisible();
   });
 });
 

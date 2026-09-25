@@ -1,29 +1,29 @@
 /**
- * GET /api/sources/status
- *
- * Returns health status of all configured alert sources.
+ * GET /api/sources/status (LEGACY — kept for compatibility, RECOVERY-2).
+ * Delegates to SourceService; preserves the legacy response shape.
  */
 
-import { NextResponse } from 'next/server';
-import { getAlertProvider, getAlertDataMode } from '@/server/providers/alerts';
+import { getServices, getDataMode } from '@/server/infrastructure/composition';
+import { withRoute } from '@/server/infrastructure/http/route';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
 
-export async function GET() {
-  try {
-    const provider = getAlertProvider();
-    const health = provider.getSourceHealth();
+export const GET = withRoute('/api/sources/status', async () => {
+  const { sourceService } = getServices();
+  const health = sourceService.getHealth();
 
-    return NextResponse.json({
-      sources: [health],
-      dataMode: getAlertDataMode(),
-    });
-  } catch (error) {
-    console.error('[/api/sources/status] Error:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
-  }
-}
+  return Response.json({
+    sources: [
+      {
+        source: health.id,
+        status: health.status,
+        lastAttemptAt: health.lastAttemptAt,
+        lastSuccessAt: health.lastSuccessAt,
+        latencyMs: health.latencyMs,
+        errorCode: health.errorCode,
+        message: health.message,
+      },
+    ],
+    dataMode: getDataMode(),
+  });
+});
